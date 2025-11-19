@@ -1,28 +1,37 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'; // Platform import cheyali
+import { Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function UserDashboard() {
   const router = useRouter();
 
   const handleLogout = async () => {
+    // Common Logout Logic Function
+    const performLogout = async () => {
+      try {
+        // --- IMPORTANT CHANGE ---
+        // Manam Login appudu 'userToken' inka chala keys save chesam.
+        // Vaatinnitini okkesari delete cheyadaniki 'clear()' vadali.
+        // Idi entire app storage ni clean chesthundi.
+        await AsyncStorage.clear();
+        
+        console.log('Storage cleared successfully');
+        
+        // Redirect to Login
+        router.replace('/login');
+      } catch (error) {
+        console.error('Logout Error:', error);
+        Alert.alert('Error', 'Failed to logout properly');
+      }
+    };
+
     // --- WEB SPECIFIC LOGIC ---
     if (Platform.OS === 'web') {
-      // Web lo native browser confirm box vastundi
       const confirmed = window.confirm('Are you sure you want to logout?');
-      
       if (confirmed) {
-        try {
-          // 1. Clear Storage (Browser LocalStorage nundi pothundi)
-          await AsyncStorage.removeItem('isAuthenticated');
-          
-          // 2. Redirect to Login
-          router.replace('/login');
-        } catch (error) {
-          console.error('Logout Error:', error);
-        }
+        await performLogout();
       }
     } 
     // --- MOBILE (ANDROID/iOS) LOGIC ---
@@ -32,14 +41,7 @@ export default function UserDashboard() {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('isAuthenticated');
-              router.replace('/login');
-            } catch (error) {
-              console.error('Logout Error:', error);
-            }
-          },
+          onPress: performLogout,
         },
       ]);
     }
@@ -64,6 +66,9 @@ export default function UserDashboard() {
           <Text style={styles.cardBody}>
             You are successfully logged in!
             {Platform.OS === 'web' ? ' (Running on Web)' : ' (Running on Mobile)'}
+          </Text>
+          <Text style={[styles.cardBody, { marginTop: 10, fontSize: 12, fontStyle: 'italic' }]}>
+            Note: Clicking logout will now clear all tokens and session data.
           </Text>
         </View>
       </View>

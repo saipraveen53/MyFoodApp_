@@ -21,7 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { rootApi, IMAGE_BASE_URL } from '../axiosInstance';
-import { useFood } from '../FoodContext'; 
+import { useFood } from '../FoodContext'; // IMPORT CONTEXT
 
 const BRANDS = [
   { id: '1', name: "La Pino'z", image: require('../../assets/images/brand1.png') },
@@ -223,6 +223,12 @@ export default function UserDashboard() {
           setIsLoadingCategory(false);
       }
   };
+  
+  // --- FIX: ADDED MISSING FUNCTION ---
+  const clearCategorySelection = () => {
+      setSelectedCategory(null);
+      fetchAllItems(); // Go back to showing all items
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -330,7 +336,7 @@ export default function UserDashboard() {
       return item ? (item.qty || 0) : 0;
   };
 
-  // --- Reusable Food Card Render ---
+  // --- Reusable Food Card Render (With Cart Logic) ---
   const renderFoodItem = (item: any) => {
       const qty = getItemQty(item.id);
       const imageUrl = item.imageUrl || item.image; 

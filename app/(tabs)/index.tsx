@@ -7,6 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function UserDashboard() {
   const router = useRouter();
 
+  const adminpage=()=>{
+    router.replace('/AdminPage')
+  }
+
   const handleLogout = async () => {
     // Common Logout Logic Function
     const performLogout = async () => {
@@ -70,6 +74,11 @@ export default function UserDashboard() {
           <Text style={[styles.cardBody, { marginTop: 10, fontSize: 12, fontStyle: 'italic' }]}>
             Note: Clicking logout will now clear all tokens and session data.
           </Text>
+          <TouchableOpacity onPress={adminpage}>
+            <Text>
+              Admin page
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>

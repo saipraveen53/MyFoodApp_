@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
-import { jwtDecode } from 'jwt-decode'; // Make sure to install: npm install jwt-decode
+import { jwtDecode } from 'jwt-decode'; 
 import React, { useState } from 'react';
 import {
     Alert,
@@ -35,10 +35,7 @@ export default function LoginScreen() {
         }
       );
 
-      // Reference Logic Implementation
       if (response.data) {
-        // Assuming response.data IS the token string (based on your reference code)
-        // If your API returns an object like { token: "..." }, use response.data.token
         const token = typeof response.data === 'string' ? response.data : response.data.token;
         
         if (!token) {
@@ -47,11 +44,9 @@ export default function LoginScreen() {
 
         console.log('Login Success. Token received.');
 
-        // 1. Save Token and Auth Status
         await AsyncStorage.setItem('userToken', token);
         await AsyncStorage.setItem('isAuthenticated', 'true');
 
-        // 2. Decode Token and Save Payload Details
         try {
           const decodedPayload: any = jwtDecode(token);
 
@@ -66,13 +61,17 @@ export default function LoginScreen() {
           console.error('Failed to decode or store token parts:', decodeError);
         }
 
-        // 3. Navigate to Home
         router.replace('/(tabs)');
       }
     } catch (error) {
       console.error('Login Error:', error);
       Alert.alert('Login Failed', 'Invalid credentials or Server error');
     }
+  };
+
+  // Function to navigate to Home without login
+  const handleGoToHome = () => {
+    router.replace('/(tabs)');
   };
 
   return (
@@ -84,10 +83,6 @@ export default function LoginScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* WEB LOGIC: 
-           Web ayithe 'webCard' style apply avthundi (Fixed width, Shadow, Center).
-           Mobile ayithe 'mobileContainer' (Full width).
-        */}
         <View style={Platform.OS === 'web' ? styles.webCard : styles.mobileContainer}>
           
           <Text style={styles.title}>Welcome Back</Text>
@@ -122,6 +117,11 @@ export default function LoginScreen() {
             <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
 
+          {/* --- NEW BUTTON: Go to Home --- */}
+          <TouchableOpacity style={styles.homeButton} onPress={handleGoToHome}>
+            <Text style={styles.homeButtonText}>Go to Home</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.linkButton}>
             <Text style={styles.linkText}>Don't have an account? Sign up</Text>
           </TouchableOpacity>
@@ -135,24 +135,21 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    // Web ki light grey background (professional look), Mobile ki White
     backgroundColor: Platform.OS === 'web' ? '#f0f2f5' : '#fff',
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center', // Vertical Center
-    alignItems: 'center',     // Horizontal Center
+    justifyContent: 'center', 
+    alignItems: 'center',     
     padding: 20,
   },
   
-  // --- WEB SPECIFIC STYLE ---
   webCard: {
     width: '100%',
-    maxWidth: 480, // Screen entha peddaga unna Card 480px minchi peragadu
+    maxWidth: 480, 
     backgroundColor: '#fff',
     padding: 40,
     borderRadius: 16,
-    // Card Shadow effect specifically for Web
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -162,12 +159,10 @@ const styles = StyleSheet.create({
     borderColor: '#eaeaea',
   },
 
-  // --- MOBILE SPECIFIC STYLE ---
   mobileContainer: {
     width: '100%',
     flex: 1,
     justifyContent: 'center',
-    // Mobile lo shadow avasaram ledu, flat ga unte better
   },
 
   title: {
@@ -175,7 +170,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
     color: '#1a1a1a',
-    textAlign: Platform.OS === 'web' ? 'center' : 'left', // Web lo title center lo unte baguntundi
+    textAlign: Platform.OS === 'web' ? 'center' : 'left', 
   },
   subtitle: {
     fontSize: 16,
@@ -216,6 +211,21 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  // Style for Go to Home button
+  homeButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 15,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  homeButtonText: {
+    color: '#007AFF',
     fontSize: 16,
     fontWeight: 'bold',
   },

@@ -10,18 +10,16 @@ export default function Index() {
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        // AsyncStorage lo 'isAuthenticated' value undo ledo check chesthunnam
         const value = await AsyncStorage.getItem('isAuthenticated');
         
         if (value === 'true') {
-          // Already login ayi unte -> Tabs (Home) ki pampinchu
+          // User login ayi unte direct ga Tabs ki vellu
           router.replace('/(tabs)');
         } else {
-          // Login avvakapothe -> Login screen ki pampinchu
+          // Lekapothe Login page ki vellu
           router.replace('/login');
         }
       } catch (e) {
-        // Error vasthe Login ki pampinchu
         router.replace('/login');
       } finally {
         setIsLoading(false);
@@ -31,11 +29,10 @@ export default function Index() {
     checkLoginStatus();
   }, []);
 
-  // Checking jarige tapudu Loading spinner chupinchu
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#ff6b35" />
       </View>
     );
   }

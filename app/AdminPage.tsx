@@ -856,8 +856,10 @@ export default function AdminPage() {
         }
     };
 
-    const handleSaveOrUpdateOffer = async (id: any, title: any, description: any, imageUri: any, imageFile: any) => {
+   const handleSaveOrUpdateOffer = async (id: any, title: any, description: any, imageUri: any, imageFile: any) => {
         const isUpdate = !!id;
+        
+        // 1. Check if it's a new image
         const isImageNew = Platform.OS === 'web' 
             ? !!imageFile 
             : (imageUri && !imageUri.startsWith('http'));
@@ -867,34 +869,21 @@ export default function AdminPage() {
 
         const action = isUpdate ? 'Update' : 'Save';
         const method = isUpdate ? 'put' : 'post';
-
         const BACKEND_FILE_KEY = isUpdate ? 'imageUrl' : 'image';
 
-        const queryParams = new URLSearchParams();
-        queryParams.append('title', title);
-        queryParams.append('description', description);
-        
+        // 2. Create FormData (ALWAYS create this, not just for new images)
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('description', description);
         if (isUpdate) {
-            queryParams.append('active', 'true');
+            formData.append('active', 'true');
         }
 
-        let endpoint;
-        if (isUpdate) {
-            endpoint = `/offer/updateOffer/${id}?${queryParams.toString()}`;
-        } else {
-            endpoint = `/offer/addOffer?${queryParams.toString()}`;
-        }
-
-        let requestBody = null;
-        let requestHeaders = {};
-
+        // 3. Append Image ONLY if it is actually new
         if (isImageNew) {
-            const formData = new FormData();
-
             if (Platform.OS === 'web' && imageFile) {
                 formData.append(BACKEND_FILE_KEY, imageFile);
-            } 
-            else if (imageUri) {
+            } else if (imageUri) {
                 const uriParts = imageUri.split('.');
                 const fileExtension = uriParts.length > 1 ? uriParts[uriParts.length - 1].toLowerCase() : 'jpg';
                 
@@ -905,18 +894,36 @@ export default function AdminPage() {
                     type: `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`,
                 });
             }
-            
-            requestBody = formData;
-            requestHeaders = { 'Content-Type': 'multipart/form-data' };
+        }
+
+        // 4. Construct Endpoint (Keep query params as backup, but body is primary)
+        const queryParams = new URLSearchParams();
+        queryParams.append('title', title);
+        queryParams.append('description', description);
+        if (isUpdate) queryParams.append('active', 'true');
+
+        let endpoint;
+        if (isUpdate) {
+            endpoint = `/offer/updateOffer/${id}?${queryParams.toString()}`;
         } else {
-            requestBody = null;
+            endpoint = `/offer/addOffer?${queryParams.toString()}`;
         }
 
         try {
-            const response = await rootApi[method](endpoint, requestBody, {
-                headers: requestHeaders,
+            console.log(`Sending ${action} request to: ${endpoint}`);
+
+            // 5. Send Request
+            // CRITICAL: Set Content-Type to undefined so the browser/engine generates the correct boundary
+            const response = await rootApi[method](endpoint, formData, {
+                headers: {
+                    'Content-Type': undefined, 
+                },
+                transformRequest: (data, headers) => {
+                    return data; // Prevent React Native Axios from destroying FormData
+                },
             });
 
+            // 6. Handle Success
             const savedOffer = {
                 ...modalOfferData,
                 id: response.data?.id || id || Date.now().toString(),
@@ -925,7 +932,7 @@ export default function AdminPage() {
                 imageUrl: response.data?.imageUrl || imageUri,
             };
 
-            Alert.alert("Success", `Offer ${action.toLowerCase()}: ${savedOffer.title}`);
+            Alert.alert("Success", `Offer ${action}d successfully!`);
 
             setOffers(prevOffers => {
                 if (isUpdate) {
@@ -940,9 +947,13 @@ export default function AdminPage() {
             });
 
         } catch (error: any) {
-            console.error(`Failed to ${action.toLowerCase()} offer:`, error);
-            const errorMessage = error.response?.data?.message || error.message || "Server Error";
-            Alert.alert("Error", errorMessage);
+            console.error(`Failed to ${action} offer:`, error);
+            if (error.response?.status === 403) {
+                 Alert.alert("Authorization Failed", "Server rejected the request. Check if your user role allows this operation.");
+            } else {
+                const errorMessage = error.response?.data?.message || error.message || "Server Error";
+                Alert.alert("Error", errorMessage);
+            }
         }
     };
 

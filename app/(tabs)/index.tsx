@@ -96,7 +96,7 @@ export default function UserDashboard() {
   const [isSearchingItems, setIsSearchingItems] = useState(false);
   const [noResults, setNoResults] = useState(false);
 
-  // Category Filtering States
+  // Category States
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
   const [categoryItems, setCategoryItems] = useState<any[]>([]);
   const [isLoadingCategory, setIsLoadingCategory] = useState(false);
@@ -148,9 +148,7 @@ export default function UserDashboard() {
   const performSearch = async (query: string) => {
     setIsSearchingItems(true);
     setNoResults(false);
-    // Reset category selection when searching
-    setSelectedCategory(null); 
-    
+    setSelectedCategory(null); // Clear category on search
     try {
       const response = await rootApi.get(`items/search?query=${query}`);
       if (response.data && response.data.length > 0) {
@@ -166,41 +164,6 @@ export default function UserDashboard() {
     } finally {
       setIsSearchingItems(false);
     }
-  };
-
-  // --- NEW FUNCTION: Handle Category Click ---
-  const onCategorySelect = async (category: any) => {
-      setSelectedCategory(category);
-      setIsLoadingCategory(true);
-      setSearchQuery(''); // Clear search when selecting category
-      
-      try {
-          // API call to fetch items by category. 
-          // Assuming endpoint pattern: items/category/{categoryId}
-          // If your API is different (e.g. filtering allItems), adjust here.
-          const response = await rootApi.get(`items/ByCategory/${category.id}`);
-          
-          if (response.data) {
-              setCategoryItems(response.data);
-          } else {
-              setCategoryItems([]);
-          }
-      } catch (error) {
-          console.error("Failed to fetch category items:", error);
-          setCategoryItems([]);
-          // Fallback: Filter from allItems if API fails
-          if (allItems.length > 0) {
-             const filtered = allItems.filter((item: any) => item.categoryId === category.id || item.category?.id === category.id);
-             setCategoryItems(filtered);
-          }
-      } finally {
-          setIsLoadingCategory(false);
-      }
-  };
-
-  const clearCategorySelection = () => {
-      setSelectedCategory(null);
-      setCategoryItems([]);
   };
 
   const fetchData = async () => {
@@ -229,15 +192,36 @@ export default function UserDashboard() {
     }
   };
 
+  // FETCH ALL ITEMS (Reset)
   const fetchAllItems = async () => {
     try {
       const response = await rootApi.get('items/allItems');
       if (response.data) {
         setAllItems(response.data);
+        setSelectedCategory(null); // Reset category filter
       }
     } catch (error) {
       console.error('Error fetching all items:', error);
     }
+  };
+
+  // FETCH BY CATEGORY
+  const onCategoryPress = async (category: any) => {
+      setSelectedCategory(category);
+      setIsLoadingCategory(true);
+      try {
+          const response = await rootApi.get(`items/ByCategory/${category.id}`);
+          if (response.data) {
+              setCategoryItems(response.data);
+          } else {
+              setCategoryItems([]);
+          }
+      } catch (error) {
+          console.error('Error fetching category items:', error);
+          setCategoryItems([]);
+      } finally {
+          setIsLoadingCategory(false);
+      }
   };
 
   const onRefresh = async () => {
@@ -346,7 +330,7 @@ export default function UserDashboard() {
       return item ? (item.qty || 0) : 0;
   };
 
-  // --- Reusable Food Card Render (With Cart Logic) ---
+  // --- Reusable Food Card Render ---
   const renderFoodItem = (item: any) => {
       const qty = getItemQty(item.id);
       const imageUrl = item.imageUrl || item.image; 
@@ -704,7 +688,7 @@ export default function UserDashboard() {
                             renderItem={({ item }: { item: any }) => (
                             <TouchableOpacity 
                                 style={[styles.categoryItem, { width: isWebLayout ? 120 : 70 }]}
-                                onPress={() => onCategorySelect(item)} // ADDED ON PRESS
+                                onPress={() => onCategoryPress(item)} // CALL API
                             >
                                 <View style={[styles.catIconWrapper, {
                                     width: isWebLayout ? 80 : 50,
@@ -868,6 +852,11 @@ export default function UserDashboard() {
                                 <View style={styles.titleUnderline} />
                                 <Text style={styles.sectionSubtitle}>Discover our complete menu.</Text>
                             </View>
+
+                            {/* SHOW ALL BUTTON */}
+                            <TouchableOpacity onPress={fetchAllItems} style={styles.showAllBtn}>
+                                 <Text style={styles.showAllText}>Show All</Text>
+                            </TouchableOpacity>
                         </View>
 
                         <View style={styles.foodGrid}>
@@ -1194,7 +1183,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center', // Changed to center to align button
     marginBottom: 20,
   },
   sectionTitle: {
@@ -1231,6 +1220,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 2,
+  },
+  
+  // Show All Button
+  showAllBtn: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  showAllText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
   },
 
   dealsContainer: {

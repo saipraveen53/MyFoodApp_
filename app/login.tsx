@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { jwtDecode } from 'jwt-decode'; 
 import React, { useState } from 'react';
@@ -12,124 +11,164 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    ActivityIndicator
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { rootApi } from './axiosInstance'; 
 
 export default function LoginScreen() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+    const router = useRouter();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async () => {
-    if (email.length === 0 || password.length === 0) {
-      Alert.alert('Error', 'Please enter email and password');
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        'http://192.168.0.240:8080/auth/login',
-        {
-          email: email,
-          password: password,
+    const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert("Login Error", "Please enter email and password.");
+            return;
         }
-      );
 
-      if (response.data) {
-        const token = typeof response.data === 'string' ? response.data : response.data.token;
+        setLoading(true);
         
-        if (!token) {
-            throw new Error('Token not found in response');
-        }
-
-        console.log('Login Success. Token received.');
-
-        await AsyncStorage.setItem('userToken', token);
-        await AsyncStorage.setItem('isAuthenticated', 'true');
-
         try {
-          const decodedPayload: any = jwtDecode(token);
+            const response = await rootApi.post('auth/login', {
+                email: email.trim(),
+                password: password.trim(),
+            });
 
-          for (const key in decodedPayload) {
-            if (Object.prototype.hasOwnProperty.call(decodedPayload, key)) {
-              const value = String(decodedPayload[key]);
-              await AsyncStorage.setItem(key, value);
+            console.log("Login Response Data:", response.data);
+
+            // 🚩 FIX: Check if response.data is directly the token string OR an object
+            const token = typeof response.data === 'string' ? response.data : response.data?.token;
+
+            if (token) {
+                await AsyncStorage.setItem('userToken', token);
+                await AsyncStorage.setItem('isAuthenticated', 'true');
+                
+                try {
+                  const decodedPayload: any = jwtDecode(token);
+                  
+                  if (decodedPayload.sub) await AsyncStorage.setItem('userEmail', decodedPayload.sub);
+                  
+                  // Extract Roles safely
+                  const roles = decodedPayload.roles || decodedPayload.role || [];
+                  const rolesString = JSON.stringify(roles);
+                  await AsyncStorage.setItem('roles', rolesString); 
+
+                  console.log("Logged in as:", rolesString);
+
+                  // 🚩 ROLE BASED REDIRECT
+                  if (rolesString.includes('ROLE_ADMIN') || rolesString.includes('ADMIN')) {
+                      router.replace('/AdminPage');
+                  } else {
+                      router.replace('/(tabs)');
+                  }
+
+                } catch (decodeError) {
+                  console.error('Failed to decode token:', decodeError);
+                  // Fallback to user home if decode fails
+                  router.replace('/(tabs)');
+                }
+
+            } else {
+                Alert.alert("Login Failed", typeof response.data === 'object' ? response.data.message : "No token received.");
             }
-          }
-          console.log('Token decoded and user details stored in AsyncStorage');
-        } catch (decodeError) {
-          console.error('Failed to decode or store token parts:', decodeError);
+        } catch (error: any) {
+            setLoading(false);
+            console.error("Login Error:", error);
+            if (error.response) {
+                Alert.alert("Login Failed", error.response.data?.message || "Invalid Credentials.");
+            } else if (error.request) {
+                Alert.alert("Network Error", "Could not connect to server. Check IP and Firewall.");
+            } else {
+                Alert.alert("Error", "Something went wrong. Please try again.");
+            }
+        } finally {
+            setLoading(false);
         }
+    };
 
-        router.replace('/(tabs)');
-      }
-    } catch (error) {
-      console.error('Login Error:', error);
-      Alert.alert('Login Failed', 'Invalid credentials or Server error');
-    }
-  };
+    const handleGoToHome = () => {
+      router.replace('/(tabs)');
+    };
 
-  // Function to navigate to Home without login
-  const handleGoToHome = () => {
-    router.replace('/(tabs)');
-  };
+    return (
+        <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.mainContainer}
+        >
+          <ScrollView 
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={Platform.OS === 'web' ? styles.webCard : styles.mobileContainer}>
+              
+              <Text style={styles.title}>Welcome Back</Text>
+              <Text style={styles.subtitle}>Login to your account</Text>
 
-  return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.mainContainer}
-    >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={Platform.OS === 'web' ? styles.webCard : styles.mobileContainer}>
-          
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Login to your account</Text>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Email Address</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your email"
+                  placeholderTextColor="#999"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email Address</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              placeholderTextColor="#999"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.passwordContainer}>
+                    <TextInput
+                        style={styles.passwordInput}
+                        placeholder="Enter your password"
+                        placeholderTextColor="#999"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry={!showPassword}
+                    />
+                    <TouchableOpacity 
+                        style={styles.toggleButton} 
+                        onPress={() => setShowPassword(!showPassword)}
+                    >
+                        <Ionicons 
+                            name={showPassword ? 'eye-off-outline' : 'eye-outline'} 
+                            size={24} 
+                            color="#777" 
+                        />
+                    </TouchableOpacity>
+                </View>
+              </View>
+              
+              <TouchableOpacity style={styles.forgotPassword}>
+                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              placeholderTextColor="#999"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-          </View>
+              <TouchableOpacity 
+                style={[styles.loginButton, loading && styles.loginButtonDisabled]} 
+                onPress={handleLogin}
+                disabled={loading}
+              >
+                {loading ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <Text style={styles.loginButtonText}>LOGIN</Text>
+                )}
+              </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Login</Text>
-          </TouchableOpacity>
+              <TouchableOpacity style={styles.homeButton} onPress={handleGoToHome}>
+                <Text style={styles.homeButtonText}>Go to Home (Guest)</Text>
+              </TouchableOpacity>
 
-          {/* --- NEW BUTTON: Go to Home --- */}
-          <TouchableOpacity style={styles.homeButton} onPress={handleGoToHome}>
-            <Text style={styles.homeButtonText}>Go to Home</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.linkButton}>
-            <Text style={styles.linkText}>Don't have an account? Sign up</Text>
-          </TouchableOpacity>
-
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+    );
 }
 
 const styles = StyleSheet.create({
@@ -143,7 +182,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',     
     padding: 20,
   },
-  
   webCard: {
     width: '100%',
     maxWidth: 480, 
@@ -158,13 +196,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#eaeaea',
   },
-
   mobileContainer: {
     width: '100%',
     flex: 1,
     justifyContent: 'center',
   },
-
   title: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -197,24 +233,55 @@ const styles = StyleSheet.create({
     // @ts-ignore
     outlineStyle: 'none',
   },
-  button: {
-    backgroundColor: '#007AFF',
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Platform.OS === 'web' ? '#fff' : '#f9f9f9',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e1e1e1',
+    marginBottom: 20,
+    // @ts-ignore
+    outlineStyle: 'none',
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 16,
+    fontSize: 16,
+  },
+  toggleButton: {
+      paddingHorizontal: 15,
+  },
+  forgotPassword: {
+      alignSelf: 'flex-end',
+      marginBottom: 25,
+      marginTop: -10,
+  },
+  forgotPasswordText: {
+      color: '#ff6b35',
+      fontSize: 14,
+      fontWeight: '600',
+  },
+  loginButton: {
+    backgroundColor: '#ff6b35',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 12,
-    shadowColor: '#007AFF',
+    shadowColor: '#ff6b35',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 3,
   },
-  buttonText: {
+  loginButtonDisabled: {
+    backgroundColor: '#ff9966',
+  },
+  loginButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // Style for Go to Home button
   homeButton: {
     backgroundColor: 'transparent',
     paddingVertical: 16,
@@ -222,20 +289,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 15,
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: '#ff6b35',
   },
   homeButtonText: {
-    color: '#007AFF',
+    color: '#ff6b35',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  linkButton: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '600',
   },
 });

@@ -1,19 +1,10 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Redirect, useRootNavigationState } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 
 export default function Index() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const rootNavigationState = useRootNavigationState();
 
-  useEffect(() => {
-    // Auto-login logic removed.
-    // Always redirect to Login screen on app launch/refresh.
-    router.replace('/login');
-    setIsLoading(false);
-  }, []);
-
-  if (isLoading) {
+  if (!rootNavigationState?.key) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator size="large" color="#ff6b35" />
@@ -21,5 +12,5 @@ export default function Index() {
     );
   }
 
-  return null;
+  return <Redirect href="/login" />;
 }

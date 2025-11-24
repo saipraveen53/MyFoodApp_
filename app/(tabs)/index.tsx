@@ -224,10 +224,9 @@ export default function UserDashboard() {
       }
   };
   
-  // --- FIX: ADDED MISSING FUNCTION ---
   const clearCategorySelection = () => {
       setSelectedCategory(null);
-      fetchAllItems(); // Go back to showing all items
+      fetchAllItems(); 
   };
 
   const onRefresh = async () => {
@@ -242,20 +241,7 @@ export default function UserDashboard() {
     }
   };
 
-  const getCategoryImage = (name: string) => {
-    const n = name.toLowerCase();
-    if (n.includes('pizza')) return 'https://cdn-icons-png.flaticon.com/512/3132/3132693.png';
-    if (n.includes('burger')) return 'https://cdn-icons-png.flaticon.com/512/3075/3075977.png';
-    if (n.includes('chicken')) return 'https://cdn-icons-png.flaticon.com/512/1046/1046784.png';
-    if (n.includes('fries')) return 'https://cdn-icons-png.flaticon.com/512/123/123284.png';
-    if (n.includes('taco')) return 'https://cdn-icons-png.flaticon.com/512/4428/4428507.png';
-    if (n.includes('burrito') || n.includes('boritto')) return 'https://cdn-icons-png.flaticon.com/512/10698/10698109.png';
-    if (n.includes('muffin')) return 'https://cdn-icons-png.flaticon.com/512/10240/10240804.png';
-    if (n.includes('coffee') || n.includes('starbucks')) return 'https://cdn-icons-png.flaticon.com/512/2935/2935413.png';
-    if (n.includes('sushi')) return 'https://cdn-icons-png.flaticon.com/512/2252/2252075.png';
-    if (n.includes('salad')) return 'https://cdn-icons-png.flaticon.com/512/2515/2515183.png';
-    return 'https://cdn-icons-png.flaticon.com/512/857/857681.png';
-  };
+  // Removed getCategoryImage function as API provides image URL now
 
   const handleLogout = async () => {
     const performLogout = async () => {
@@ -702,7 +688,11 @@ export default function UserDashboard() {
                                     borderRadius: isWebLayout ? 40 : 25
                                 }]}>
                                     <Image 
-                                        source={{ uri: getCategoryImage(item.name) }} 
+                                        // Changed logic: Use API image URL if available
+                                        source={{ uri: item.imageUrl && item.imageUrl.startsWith('http') 
+                                            ? item.imageUrl 
+                                            : `${IMAGE_BASE_URL}/${item.imageUrl}` 
+                                        }} 
                                         style={styles.catIcon} 
                                     />
                                 </View>

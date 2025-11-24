@@ -5,7 +5,7 @@ import axios, {
     InternalAxiosRequestConfig,
 } from 'axios';
  
-const API_BASE_URL = 'http://192.168.0.240:8080';
+const API_BASE_URL = 'http://192.168.0.218:8080';
 
 export const IMAGE_BASE_URL = API_BASE_URL;
 
@@ -42,4 +42,4 @@ const createAxiosInstance = (baseURL: string): AxiosInstance => {
   return instance;
 };
 
-export const rootApi: AxiosInstance = createAxiosInstance("http://192.168.0.240:8080");
+export const rootApi: AxiosInstance = createAxiosInstance("http://192.168.0.218:8080");

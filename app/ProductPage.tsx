@@ -64,18 +64,7 @@ interface Product {
 
 // --- REUSABLE COMPONENTS ---
 
-// 1. Updated SearchBar to accept value and onChangeText
-const SearchBar = ({ 
-    onSearchClose, 
-    isMobile, 
-    value, 
-    onChangeText 
-}: { 
-    onSearchClose: () => void, 
-    isMobile: boolean, 
-    value: string, 
-    onChangeText: (text: string) => void 
-}) => (
+const SearchBar = ({ onSearchClose, isMobile }: { onSearchClose: () => void, isMobile: boolean }) => (
     <View style={[styles.searchBarContainer, isMobile && styles.searchBarContainerMobile]}>
         <Text style={styles.searchIconText}>🔍</Text>
         <TextInput 
@@ -83,8 +72,6 @@ const SearchBar = ({
             placeholder="Search here..."
             placeholderTextColor="#999"
             autoFocus={true} 
-            value={value}
-            onChangeText={onChangeText}
         />
         <TouchableOpacity style={styles.searchCloseButton} onPress={onSearchClose}>
             <Text style={styles.searchCloseText}>&#10005;</Text>
@@ -158,15 +145,7 @@ const Sidebar = ({ isDarkMode }: any) => (
 );
 
 // --- NAV/HEADER COMPONENTS ---
-
-// 2. Updated WebHeader to accept search props
-const WebHeader = ({ 
-    handleLogout, 
-    isDarkMode, 
-    toggleDarkMode, 
-    searchQuery, 
-    setSearchQuery 
-}: any) => {
+const WebHeader = ({ handleLogout, isDarkMode, toggleDarkMode }: any) => {
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false); 
     
@@ -185,11 +164,6 @@ const WebHeader = ({
         }
     };
 
-    const closeSearch = () => {
-        setIsSearchOpen(false);
-        setSearchQuery(''); // Clear search on close
-    };
-
     return (
         <View style={styles.headerCardWrapper}> 
             <View style={[styles.headerCard, isDarkMode && darkStyles.headerCard]}>
@@ -205,12 +179,7 @@ const WebHeader = ({
                 <View style={styles.headerButtonGroup}>
                     <View style={styles.iconButtons}>
                         {isSearchOpen ? (
-                            <SearchBar 
-                                onSearchClose={closeSearch} 
-                                isMobile={false} 
-                                value={searchQuery}
-                                onChangeText={setSearchQuery}
-                            />
+                            <SearchBar onSearchClose={() => setIsSearchOpen(false)} isMobile={false} />
                         ) : (
                             <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={() => setIsSearchOpen(true)}>
                                 <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔍</Text>
@@ -268,15 +237,7 @@ const WebHeader = ({
     );
 };
 
-// 3. Updated MobileHeader to accept search props
-const MobileHeader = ({ 
-    onHamburgerPress, 
-    handleLogout, 
-    isDarkMode, 
-    toggleDarkMode,
-    searchQuery,
-    setSearchQuery
-}: any) => {
+const MobileHeader = ({ onHamburgerPress, handleLogout, isDarkMode, toggleDarkMode }: any) => {
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false); 
 
@@ -295,20 +256,10 @@ const MobileHeader = ({
         }
     };
 
-    const closeSearch = () => {
-        setIsSearchOpen(false);
-        setSearchQuery('');
-    };
-
     return (
         <View style={{zIndex: 9000}}>
             {isSearchOpen ? (
-                <SearchBar 
-                    onSearchClose={closeSearch} 
-                    isMobile={true} 
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                />
+                <SearchBar onSearchClose={() => setIsSearchOpen(false)} isMobile={true} />
             ) : (
                 <View style={[styles.mobileHeaderContainer, isDarkMode && darkStyles.mobileHeaderContainer]}>
                     <View style={styles.mobileHeaderLeft}>
@@ -369,6 +320,7 @@ const MobileHeader = ({
 };
 
 // --- PRODUCT CARD COMPONENT ---
+// 1. Updated Interface to accept onDelete prop
 const ProductCard = ({ 
     product, 
     isDarkMode, 
@@ -412,6 +364,7 @@ const ProductCard = ({
                 <TouchableOpacity style={styles.actionButton}>
                     <Text style={styles.actionButtonText}>Edit</Text>
                 </TouchableOpacity>
+                {/* 2. Connected Delete Button */}
                 <TouchableOpacity 
                     style={[styles.actionButton, styles.deleteButton]}
                     onPress={() => onDelete(product.id)}
@@ -432,9 +385,6 @@ const ProductPage = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // 4. Added Search Query State
-  const [searchQuery, setSearchQuery] = useState('');
 
   const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current; 
 
@@ -464,6 +414,7 @@ const ProductPage = () => {
       }
   };
 
+  // FETCH PRODUCTS
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -481,10 +432,12 @@ const ProductPage = () => {
     }
   };
 
+  // 3. HANDLE DELETE PRODUCT
   const handleDeleteProduct = async (id: number) => {
     const performDelete = async () => {
         try {
             await rootApi.delete(`items/delete/${id}`);
+            // Optimistic update: Remove from local state immediately
             setProducts(prevProducts => prevProducts.filter(p => p.id !== id));
             if (!isWeb) Alert.alert("Success", "Product deleted successfully");
         } catch (error) {
@@ -509,11 +462,6 @@ const ProductPage = () => {
     }
   };
 
-  // 5. Filter Logic
-  const filteredProducts = products.filter(product => 
-      product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
     <View style={[isWeb ? styles.containerWebLayout : styles.containerMobile, isDarkMode && darkStyles.containerWebLayout]}>
         
@@ -525,9 +473,7 @@ const ProductPage = () => {
                     onHamburgerPress={toggleDrawer} 
                     handleLogout={handleLogout} 
                     isDarkMode={isDarkMode} 
-                    toggleDarkMode={toggleDarkMode}
-                    searchQuery={searchQuery} // Pass Search Props
-                    setSearchQuery={setSearchQuery}
+                    toggleDarkMode={toggleDarkMode} 
                 />
             )}
 
@@ -540,8 +486,6 @@ const ProductPage = () => {
                         handleLogout={handleLogout} 
                         isDarkMode={isDarkMode} 
                         toggleDarkMode={toggleDarkMode} 
-                        searchQuery={searchQuery} // Pass Search Props
-                        setSearchQuery={setSearchQuery}
                     />
                 )}
 
@@ -559,20 +503,19 @@ const ProductPage = () => {
                         </View>
                     ) : (
                         <View style={styles.productsGrid}>
-                            {/* 6. Render Filtered Products */}
-                            {filteredProducts.length > 0 ? (
-                                filteredProducts.map((item) => (
+                            {products.length > 0 ? (
+                                products.map((item) => (
                                     <ProductCard 
                                         key={item.id} 
                                         product={item} 
                                         isDarkMode={isDarkMode} 
                                         isWeb={isWeb}
-                                        onDelete={handleDeleteProduct} 
+                                        onDelete={handleDeleteProduct} // Pass the handler
                                     />
                                 ))
                             ) : (
                                 <Text style={[styles.noDataText, isDarkMode && darkStyles.textSecondary]}>
-                                    {products.length === 0 ? "No products found." : "No matching products found."}
+                                    No products found.
                                 </Text>
                             )}
                         </View>
@@ -654,7 +597,7 @@ const styles = StyleSheet.create({
     scrollContentWeb: { paddingVertical: 20, paddingHorizontal: 20, alignSelf: 'center', width: '100%', maxWidth: 1400 },
     scrollContentMobile: { paddingBottom: 20, backgroundColor: '#f5f5f5' },
     
-    // Header Styles
+    // Header Styles (Same as Admin)
     headerCardWrapper: { marginBottom: 20, zIndex: 10 },
     headerCard: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',

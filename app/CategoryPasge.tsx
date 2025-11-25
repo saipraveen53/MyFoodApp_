@@ -119,6 +119,8 @@ const SidebarContent = ({ isDarkMode }: any) => {
     );
 };
 
+
+
 const Sidebar = ({ isDarkMode }: any) => (
     <View style={styles.sidebar}>
         <SidebarContent isDarkMode={isDarkMode} />
@@ -268,25 +270,27 @@ const CategoryCard = ({ category, isDarkMode, isWeb, onEdit, onDelete }: { categ
     );
 };
 
-// --- CATEGORY MODAL COMPONENT ---
-const CategoryModal = ({ isVisible, onClose, onSave, onUpdate, isDarkMode, categoryData }: any) => {
+// --- CATEGORY MODAL COMPONENT (Updated for Edit) ---
+const CategoryModal = ({ isVisible, onClose, onSave, isDarkMode, categoryToEdit }: any) => {
     const [name, setName] = useState('');
     const [imageUri, setImageUri] = useState<string | null>(null);
-    const [imageFile, setImageFile] = useState<any>(null); 
+    const [imageFile, setImageFile] = useState<any>(null); // For Web
 
     useEffect(() => {
         if (isVisible) {
-            if (categoryData) {
-                setName(categoryData.name);
-                setImageUri(categoryData.imageUrl);
-                setImageFile(null);
+            if (categoryToEdit) {
+                // Populate fields if editing
+                setName(categoryToEdit.name);
+                setImageUri(categoryToEdit.imageUrl);
+                setImageFile(null); // Reset file, imageUri holds the remote URL
             } else {
+                // Reset if creating new
                 setName('');
                 setImageUri(null);
                 setImageFile(null);
             }
         }
-    }, [isVisible, categoryData]);
+    }, [isVisible, categoryToEdit]);
 
     if (!isVisible) return null;
 
@@ -307,6 +311,8 @@ const CategoryModal = ({ isVisible, onClose, onSave, onUpdate, isDarkMode, categ
         if (!result.canceled) {
             const uri = result.assets[0].uri;
             setImageUri(uri);
+            
+            // Handle File Object for Web
             if (Platform.OS === 'web') {
                 setImageFile(result.assets[0].file);
             } else {
@@ -320,23 +326,18 @@ const CategoryModal = ({ isVisible, onClose, onSave, onUpdate, isDarkMode, categ
             Alert.alert("Validation", "Category name is required");
             return;
         }
-        if (!categoryData && !imageUri) {
+        if (!imageUri) {
             Alert.alert("Validation", "Please select an image for the category");
             return;
         }
-
-        if (categoryData) {
-             onUpdate(categoryData.id, name, imageUri, imageFile);
-        } else {
-             onSave(name, imageUri, imageFile);
-        }
+        onSave(name, imageUri, imageFile);
     };
 
     return (
         <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, isDarkMode && darkStyles.modalContent]}>
                 <Text style={[styles.modalTitle, isDarkMode && darkStyles.textPrimary]}>
-                    {categoryData ? 'Edit Category' : 'Add New Category'}
+                    {categoryToEdit ? 'Edit Category' : 'Add New Category'}
                 </Text>
                 
                 <View style={styles.inputContainer}>
@@ -372,7 +373,7 @@ const CategoryModal = ({ isVisible, onClose, onSave, onUpdate, isDarkMode, categ
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.modalSaveButton} onPress={handleSave}>
                         <Text style={styles.modalSaveButtonText}>
-                            {categoryData ? 'Update' : 'Save'}
+                             {categoryToEdit ? 'Update' : 'Save'}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -392,7 +393,7 @@ const CategoryPage = () => {
   const [loading, setLoading] = useState(true);
   
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
 
   const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current; 
 
@@ -439,18 +440,15 @@ const CategoryPage = () => {
       fetchCategories();
   }, []);
 
-  // --- 1. HANDLE SAVE CATEGORY (ADD ONLY) ---
+  // --- HANDLE SAVE / UPDATE CATEGORY ---
   const handleSaveCategory = async (name: string, imageUri: string | null, imageFile: any) => {
       if (!name.trim()) {
           Alert.alert("Error", "Category name is required.");
           return;
       }
-      if (!imageUri && Platform.OS !== 'web') {
-           Alert.alert("Error", "Please select an image.");
-           return;
-      }
-
+      
       setIsModalVisible(false); 
+      setCategoryToEdit(null); // Reset editing state
 
       try {
           const token = await AsyncStorage.getItem('userToken');
@@ -459,25 +457,35 @@ const CategoryPage = () => {
               return;
           }
 
-          const formData = new FormData();
-          const endpoint = `/categories/addCategory?name=${encodeURIComponent(name)}`;
+          const isUpdate = !!categoryToEdit;
+          const endpoint = isUpdate 
+            ? `/categories/update/${categoryToEdit.id}?name=${encodeURIComponent(name)}`
+            : `/categories/addCategory?name=${encodeURIComponent(name)}`;
+            
+          const method = isUpdate ? 'put' : 'post';
+          const successMessage = isUpdate ? "Category updated successfully!" : "Category added successfully!";
+
+          // Determine if image is new (local file URI) or existing remote URL
+          const isNewImage = imageUri && !imageUri.startsWith('http');
           
-          if (imageUri) {
+          const formData = new FormData();
+          
+          // Only append image if it is new. If updating and imageUri is existing URL, we skip sending imageFile.
+          if (isNewImage && imageUri) {
               if (Platform.OS === 'web') {
                   if (imageFile) {
                       formData.append('imageFile', imageFile); 
                   }
               } else {
+                  // --- ANDROID FIX STARTS HERE ---
                   let filename = imageUri.split('/').pop();
                   let match = /\.(\w+)$/.exec(filename || '');
                   let type = match ? `image/${match[1]}` : `image/jpeg`;
+                  
                   if (type === 'image/jpg') type = 'image/jpeg';
 
-                  let uri = imageUri;
-                  if (!uri.startsWith('file://') && !uri.startsWith('content://')) {
-                       uri = 'file://' + uri;
-                  }
-
+                  let uri = imageUri; 
+                  
                   // @ts-ignore
                   formData.append('imageFile', {
                       uri: uri,
@@ -487,128 +495,62 @@ const CategoryPage = () => {
               }
           }
 
-          const response = await rootApi.post(endpoint, formData, {
+          console.log(`🚀 Sending ${method.toUpperCase()} to: ${endpoint}`);
+
+          const response = await rootApi[method](endpoint, formData, {
               headers: {
-                  'Content-Type': undefined, 
+                  'Content-Type': 'multipart/form-data', // Usually 'undefined' is better for axios + formData but header might be needed here
                   'Authorization': `Bearer ${token}`
               },
               transformRequest: (data, headers) => {
-                  return data; 
+                  return data; // Prevent axios from stringifying FormData
               },
           });
 
           if (response.data) {
-              Alert.alert("Success", "Category added successfully!");
-              setCategories(prev => [...prev, response.data]);
-          }
-
-      } catch (error: any) {
-          console.error("❌ Failed to save category:", error);
-          if (error.response) {
-              Alert.alert("Server Error", `Code: ${error.response.status}`);
-          } else {
-              Alert.alert("Error", error.message);
-          }
-      }
-  };
-
-  // --- 2. HANDLE UPDATE CATEGORY (EDIT ONLY) ---
-  const handleUpdateCategory = async (id: number, name: string, imageUri: string | null, imageFile: any) => {
-      if (!name.trim()) {
-          Alert.alert("Error", "Category name is required.");
-          return;
-      }
-      setIsModalVisible(false);
-
-      try {
-          const token = await AsyncStorage.getItem('userToken');
-          if (!token) {
-              Alert.alert("Auth Error", "Please login again.");
-              return;
-          }
-
-          const endpoint = `/categories/update/${id}?name=${encodeURIComponent(name)}`;
-          
-          const isNewImage = imageUri && !imageUri.startsWith('http');
-          
-          let config: any = {};
-          let payload: any = null;
-
-          if (isNewImage && imageUri) {
-              const formData = new FormData();
+              console.log("✅ Success:", response.data);
+              Alert.alert("Success", successMessage);
               
-              if (Platform.OS === 'web') {
-                  if (imageFile) {
-                      formData.append('imageFile', imageFile); 
-                  }
+              // Update Local State
+              if (isUpdate) {
+                  setCategories(prev => prev.map(cat => cat.id === categoryToEdit.id ? response.data : cat));
               } else {
-                  let filename = imageUri.split('/').pop();
-                  let match = /\.(\w+)$/.exec(filename || '');
-                  let type = match ? `image/${match[1]}` : `image/jpeg`;
-                  if (type === 'image/jpg') type = 'image/jpeg';
-
-                  let uri = imageUri;
-                  if (!uri.startsWith('file://') && !uri.startsWith('content://')) {
-                       uri = 'file://' + uri;
-                  }
-
-                  // @ts-ignore
-                  formData.append('imageFile', {
-                      uri: uri,
-                      name: filename || `photo.jpg`,
-                      type: type, 
-                  });
+                  setCategories(prev => [...prev, response.data]);
               }
-              
-              payload = formData;
-              config = {
-                  headers: {
-                      'Content-Type': undefined,
-                      'Authorization': `Bearer ${token}`
-                  },
-                  transformRequest: (data: any) => data,
-              };
-          } else {
-              payload = {};
-              config = {
-                   headers: {
-                      'Authorization': `Bearer ${token}`
-                   }
-              };
-          }
-
-          const response = await rootApi.put(endpoint, payload, config);
-
-          if (response.data) {
-              Alert.alert("Success", "Category updated successfully!");
-              setCategories(prev => prev.map(cat => cat.id === id ? response.data : cat));
           }
 
       } catch (error: any) {
-          console.error("❌ Failed to update category:", error);
+          console.error(`❌ Failed to ${categoryToEdit ? 'update' : 'add'} category:`, error);
+          
           if (error.response) {
-              Alert.alert("Server Error", `Code: ${error.response.status}`);
+              Alert.alert("Server Error", `Code: ${error.response.status}\n${JSON.stringify(error.response.data)}`);
+          } else if (error.request) {
+              Alert.alert("Network Error", "Request failed. Check:\n1. You are on the same Wi-Fi\n2. Firewall is Off\n3. Backend is running");
           } else {
               Alert.alert("Error", error.message);
           }
       }
-  };
-
-  const handleAddBtnPress = () => {
-      setSelectedCategory(null);
-      setIsModalVisible(true);
   };
 
   const handleEditCategory = (category: Category) => {
-      setSelectedCategory(category);
+      setCategoryToEdit(category);
       setIsModalVisible(true);
   };
+  
+  const handleModalClose = () => {
+      setIsModalVisible(false);
+      setCategoryToEdit(null);
+  }
 
+  // --- HANDLE DELETE CATEGORY ---
   const handleDeleteCategory = async (id: number) => {
+      // 1. Define the actual delete logic
       const performDelete = async () => {
           try {
               await rootApi.delete(`categories/delete/${id}`);
+              // Update UI
               setCategories(prev => prev.filter(c => c.id !== id));
+              // Show success message only on mobile (Web updates visually)
               if (Platform.OS !== 'web') Alert.alert("Success", "Category deleted.");
           } catch (error: any) {
               console.error("Failed to delete category:", error);
@@ -616,16 +558,25 @@ const CategoryPage = () => {
           }
       };
 
+      // 2. Check Platform
       if (Platform.OS === 'web') {
+          // WEB: Use browser native confirm dialog
           const confirmed = window.confirm("Are you sure you want to delete this category?");
-          if (confirmed) performDelete();
+          if (confirmed) {
+              performDelete();
+          }
       } else {
+          // MOBILE: Use Native Alert with buttons
           Alert.alert(
               "Delete Category",
               "Are you sure you want to delete this category?",
               [
                   { text: "Cancel", style: "cancel" },
-                  { text: "Delete", style: "destructive", onPress: performDelete }
+                  { 
+                      text: "Delete", 
+                      style: "destructive",
+                      onPress: performDelete 
+                  }
               ]
           );
       }
@@ -647,7 +598,13 @@ const CategoryPage = () => {
                 <View style={[styles.pageContainer, isDarkMode && darkStyles.pageContainer]}>
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, isDarkMode && darkStyles.textPrimary]}>All Categories</Text>
-                        <TouchableOpacity style={styles.addBtn} onPress={handleAddBtnPress}>
+                        <TouchableOpacity 
+                            style={styles.addBtn} 
+                            onPress={() => {
+                                setCategoryToEdit(null);
+                                setIsModalVisible(true);
+                            }}
+                        >
                             <Text style={styles.addBtnText}>+ Add Category</Text>
                         </TouchableOpacity>
                     </View>
@@ -691,11 +648,10 @@ const CategoryPage = () => {
 
         <CategoryModal 
             isVisible={isModalVisible}
-            onClose={() => setIsModalVisible(false)}
+            onClose={handleModalClose}
             onSave={handleSaveCategory}
-            onUpdate={handleUpdateCategory}
             isDarkMode={isDarkMode}
-            categoryData={selectedCategory} 
+            categoryToEdit={categoryToEdit}
         />
     </View>
   );

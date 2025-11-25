@@ -629,7 +629,7 @@ const SidebarContent = ({ isDarkMode }: any) => {
                         <Text style={[styles.sidebarItemText, item.active && styles.sidebarItemTextActive]}>
                             {item.label}
                         </Text>
-                        {/* Only show arrow if a route is defined */}
+                        {/* Only show arrow if a route     is defined */}
                         {item.route && <Text style={styles.sidebarItemArrow}>&gt;</Text>}
                     </TouchableOpacity>
                 ))}

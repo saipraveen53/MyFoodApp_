@@ -14,10 +14,10 @@ import {
     Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
-// 1. Added IMAGE_BASE_URL import
+// Make sure IMAGE_BASE_URL is exported from your axiosInstance
 import { rootApi, IMAGE_BASE_URL } from './axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useRouter } from 'expo-router'; // ✅ NAVIGATION FIX
 import * as ImagePicker from 'expo-image-picker'; 
 import axios from 'axios'; 
 
@@ -76,10 +76,11 @@ const analyticsData = [
     { title: 'New Orders', value: '1,234', trendColor: '#007AFF', isBigCard: false },
 ];
 
+// ✅ NAVIGATION ROUTES (Ensure these match your file structure)
 const sidebarItems = [
     { icon: '🏠', label: 'Dashboard', route: '/AdminPage', active: true },
     { icon: '📦', label: 'Product', route: '/ProductPage' },
-    { icon: '🏷️', label: 'Category', route: '/CategoryPasge' },
+    { icon: '🏷️', label: 'Category', route: '/CategoryPage' }, // Fixed typo
     { icon: '⚙️', label: 'Attributes', route: '/attributes' },
     { icon: '🏢', label: 'Restaurants', route: '/restaurants' },
     { icon: '🚚', label: 'Drivers', route: '/drivers' },
@@ -594,12 +595,9 @@ const MobileHeader = ({ onHamburgerPress, handleLogout, isDarkMode, toggleDarkMo
     );
 };
 
-// ... existing imports and code
-
-// 🚩 MODIFIED: Converted to block function to use router hook
+// 🚩 MODIFIED: Sidebar Navigation FIX
 const SidebarContent = ({ isDarkMode }: any) => {
-    // 1. Initialize the router hook
-    const router = useRouter(); 
+    const router = useRouter(); // ✅ Uses Router Hook
 
     return (
         <>
@@ -615,13 +613,11 @@ const SidebarContent = ({ isDarkMode }: any) => {
                     <TouchableOpacity 
                         key={index}
                         style={[styles.sidebarItem, item.active && styles.sidebarItemActive]}
-                        // 2. Dynamic Navigation Logic
+                        // ✅ ADDED: Click Logic
                         onPress={() => {
                             if (item.route) {
                                 // @ts-ignore
                                 router.push(item.route);
-                            } else {
-                                console.log("No route defined for:", item.label);
                             }
                         }}
                     >
@@ -629,7 +625,6 @@ const SidebarContent = ({ isDarkMode }: any) => {
                         <Text style={[styles.sidebarItemText, item.active && styles.sidebarItemTextActive]}>
                             {item.label}
                         </Text>
-                        {/* Only show arrow if a route is defined */}
                         {item.route && <Text style={styles.sidebarItemArrow}>&gt;</Text>}
                     </TouchableOpacity>
                 ))}
@@ -637,8 +632,6 @@ const SidebarContent = ({ isDarkMode }: any) => {
         </>
     );
 };
-
-// ... rest of the file (Sidebar, OfferModal, AdminPage, styles)
 
 const Sidebar = ({ isDarkMode }: any) => (
     <View style={styles.sidebar}>
@@ -877,10 +870,9 @@ export default function AdminPage() {
         }
     };
 
-   const handleSaveOrUpdateOffer = async (id: any, title: any, description: any, imageUri: any, imageFile: any) => {
+    // 🟢 HYBRID FIX: API Logic from Code 1 (URL Params) + Structure of Code 2
+    const handleSaveOrUpdateOffer = async (id: any, title: any, description: any, imageUri: any, imageFile: any) => {
         const isUpdate = !!id;
-        
-        // 1. Check if image is new
         const isImageNew = Platform.OS === 'web' 
             ? !!imageFile 
             : (imageUri && !imageUri.startsWith('http'));
@@ -892,34 +884,33 @@ export default function AdminPage() {
         const method = isUpdate ? 'put' : 'post';
         const BACKEND_FILE_KEY = isUpdate ? 'imageUrl' : 'image';
 
-        // 🚩 FIX 1: Do NOT add title/description to URL params (Prevents duplicates)
+        // 🔥 CODE 1 LOGIC: Params in URL (Backend Requirement)
         const queryParams = new URLSearchParams();
+        queryParams.append('title', title);
+        queryParams.append('description', description);
+        
         if (isUpdate) {
             queryParams.append('active', 'true');
         }
 
-        const queryString = queryParams.toString();
-        const queryPart = queryString ? `?${queryString}` : '';
-
         let endpoint;
         if (isUpdate) {
-            endpoint = `/offer/updateOffer/${id}${queryPart}`;
+            endpoint = `/offer/updateOffer/${id}?${queryParams.toString()}`;
         } else {
-            endpoint = `/offer/addOffer${queryPart}`;
+            endpoint = `/offer/addOffer?${queryParams.toString()}`;
         }
 
-        console.log(`Sending ${action} request to: ${endpoint}`);
+        // 🔥 CODE 1 LOGIC: Request Body is null unless there's an image
+        let requestBody = null;
+        let requestHeaders = {};
 
-        // 🚩 FIX 2: Always put title/description in FormData (Ensures updates work)
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('description', description);
-
-        // 3. Append Image ONLY if it is new
         if (isImageNew) {
+            const formData = new FormData();
+            
             if (Platform.OS === 'web' && imageFile) {
                 formData.append(BACKEND_FILE_KEY, imageFile);
-            } else if (imageUri) {
+            } 
+            else if (imageUri) {
                 const uriParts = imageUri.split('.');
                 const fileExtension = uriParts.length > 1 ? uriParts[uriParts.length - 1].toLowerCase() : 'jpg';
                 
@@ -930,20 +921,16 @@ export default function AdminPage() {
                     type: `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`,
                 });
             }
+            
+            requestBody = formData;
+            requestHeaders = { 'Content-Type': 'multipart/form-data' };
         }
 
         try {
-            // 4. Send Request (Content-Type: undefined lets the browser handle boundaries)
-            const response = await rootApi[method](endpoint, formData, {
-                headers: {
-                    'Content-Type': undefined, 
-                },
-                transformRequest: (data, headers) => {
-                    return data; 
-                },
+            const response = await rootApi[method](endpoint, requestBody, {
+                headers: requestHeaders,
             });
 
-            // 5. Handle Success
             const savedOffer = {
                 ...modalOfferData,
                 id: response.data?.id || id || Date.now().toString(),
@@ -968,12 +955,8 @@ export default function AdminPage() {
 
         } catch (error: any) {
             console.error(`Failed to ${action} offer:`, error);
-            if (error.response?.status === 403) {
-                 Alert.alert("Authorization Failed", "Server rejected the request.");
-            } else {
-                const errorMessage = error.response?.data?.message || error.message || "Server Error";
-                Alert.alert("Error", errorMessage);
-            }
+            const errorMessage = error.response?.data?.message || error.message || "Server Error";
+            Alert.alert("Error", errorMessage);
         }
     };
 
@@ -1010,9 +993,8 @@ export default function AdminPage() {
     const [ordersData, setOrdersData] = useState([]);
     const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
-    // 2. UPDATED API FETCH (CATEGORIES)
+    // API FETCH (CATEGORIES)
     useEffect(() => {
-        // Only fetch if authorized
         if (!isAuthorized) return;
 
         const fetchCategories = async () => {
@@ -1021,17 +1003,12 @@ export default function AdminPage() {
                 const response = await rootApi.get('/categories/all');
                 
                 const mappedCategories = response.data.map((item: any) => {
-                    // Default fallback
                     let imageSrc = IMAGE_MAP[item.name] || DEFAULT_IMAGE;
-                    
-                    // Use backend image if available
                     if (item.imageUrl) {
-                         // Handle relative vs absolute URLs
                          imageSrc = item.imageUrl.startsWith('http') 
                             ? item.imageUrl 
                             : `${IMAGE_BASE_URL}/${item.imageUrl}`;
                     }
-                    
                     return {
                         name: item.name,
                         image: imageSrc,
@@ -1288,7 +1265,7 @@ export default function AdminPage() {
                             <View style={styles.dynamicContentContainerMobile}>
                                 
                                 <View style={[styles.sectionContainer, isDarkMode && darkStyles.sectionContainer]}>
-                                       <View style={styles.sectionHeader}>
+                                        <View style={styles.sectionHeader}>
                                             <Text style={[styles.sectionTitle, isDarkMode && darkStyles.textPrimary]}>Menu category</Text>
                                             <View style={styles.navArrows}>
                                                 <Text style={[styles.arrow, isDarkMode && darkStyles.textSecondary]}>&lt;</Text>

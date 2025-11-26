@@ -80,7 +80,7 @@ const analyticsData = [
 const sidebarItems = [
     { icon: '🏠', label: 'Dashboard', route: '/AdminPage', active: true },
     { icon: '📦', label: 'Product', route: '/ProductPage' },
-    { icon: '🏷️', label: 'Category', route: '/CategoryPage' }, // Fixed typo
+    { icon: '🏷️', label: 'Category', route: '/CategoryPasge' }, // Fixed typo
     { icon: '⚙️', label: 'Attributes', route: '/attributes' },
     { icon: '🏢', label: 'Restaurants', route: '/restaurants' },
     { icon: '🚚', label: 'Drivers', route: '/drivers' },
@@ -1534,17 +1534,15 @@ const styles = StyleSheet.create({
     // --- END SEARCH BAR STYLES ---
 
     // --- MOBILE HEADER STYLES ---
+    // Mobile Header Styles
     mobileHeaderContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        backgroundColor: '#fff', 
-        marginBottom: 10,
-        marginTop:10,
-        zIndex: 9000,
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        paddingHorizontal: 15, paddingVertical: 10, backgroundColor: '#fff',
+        marginBottom: 10, marginTop: 10, zIndex: 9000,
+        paddingTop: 45,      // Adjust this value (e.g., 40-50) for more top space
+        paddingBottom: 15,
     },
+ 
     mobileHeaderLeft: {
         flexDirection: 'row',
         alignItems: 'center',

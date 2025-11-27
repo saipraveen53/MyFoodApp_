@@ -1,93 +1,59 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { jwtDecode } from 'jwt-decode'; 
 import React, { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
+    View,
     Text,
     TextInput,
+    StyleSheet,
     TouchableOpacity,
-    View,
-    ActivityIndicator
+    Alert,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import { rootApi } from './axiosInstance';
 import { Ionicons } from '@expo/vector-icons';
-import { rootApi } from './axiosInstance'; 
 
-export default function LoginScreen() {
+export default function SignupScreen() {
     const router = useRouter();
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert("Login Error", "Please enter email and password.");
+    const handleSignup = async () => {
+        if (!name || !email || !phone || !password) {
+            Alert.alert("Error", "Please fill in all fields");
             return;
         }
 
         setLoading(true);
-        
         try {
-            const response = await rootApi.post('auth/login', {
-                email: email.trim(),
-                password: password.trim(),
-            });
+            const payload = {
+                name,
+                email,
+                phone,
+                password
+            };
 
-            console.log("Login Response Data:", response.data);
+            const response = await rootApi.post('auth/register', payload);
 
-            const token = typeof response.data === 'string' ? response.data : response.data?.token;
-
-            if (token) {
-                await AsyncStorage.setItem('userToken', token);
-                await AsyncStorage.setItem('isAuthenticated', 'true');
-                
-                try {
-                  const decodedPayload: any = jwtDecode(token);
-                  
-                  if (decodedPayload.sub) await AsyncStorage.setItem('userEmail', decodedPayload.sub);
-                  
-                  const roles = decodedPayload.roles || decodedPayload.role || [];
-                  const rolesString = JSON.stringify(roles);
-                  await AsyncStorage.setItem('roles', rolesString); 
-
-                  console.log("Logged in as:", rolesString);
-
-                  if (rolesString.includes('ROLE_ADMIN') || rolesString.includes('ADMIN')) {
-                      router.replace('/AdminPage');
-                  } else {
-                      router.replace('/(tabs)');
-                  }
-
-                } catch (decodeError) {
-                  console.error('Failed to decode token:', decodeError);
-                  router.replace('/(tabs)');
-                }
-
+            if (response.status === 200 || response.status === 201) {
+                Alert.alert("Success", "Registration successful! Please login.");
+                router.replace('/login');
             } else {
-                Alert.alert("Login Failed", typeof response.data === 'object' ? response.data.message : "No token received.");
+                Alert.alert("Error", "Registration failed.");
             }
         } catch (error: any) {
-            setLoading(false);
-            console.error("Login Error:", error);
-            if (error.response) {
-                Alert.alert("Login Failed", error.response.data?.message || "Invalid Credentials.");
-            } else if (error.request) {
-                Alert.alert("Network Error", "Could not connect to server. Check IP and Firewall.");
-            } else {
-                Alert.alert("Error", "Something went wrong. Please try again.");
-            }
+            console.error("Signup Error:", error);
+            const msg = error.response?.data?.message || "Registration failed";
+            Alert.alert("Error", msg);
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleGoToHome = () => {
-      router.replace('/(tabs)');
     };
 
     return (
@@ -101,8 +67,19 @@ export default function LoginScreen() {
           >
             <View style={Platform.OS === 'web' ? styles.webCard : styles.mobileContainer}>
               
-              <Text style={styles.title}>Welcome Back</Text>
-              <Text style={styles.subtitle}>Login to your account</Text>
+              <Text style={styles.title}>Create Account</Text>
+              <Text style={styles.subtitle}>Sign up to get started</Text>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your name"
+                  placeholderTextColor="#999"
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Email Address</Text>
@@ -118,11 +95,23 @@ export default function LoginScreen() {
               </View>
 
               <View style={styles.inputContainer}>
+                <Text style={styles.label}>Phone Number</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your phone number"
+                  placeholderTextColor="#999"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
                 <Text style={styles.label}>Password</Text>
                 <View style={styles.passwordContainer}>
                     <TextInput
                         style={styles.passwordInput}
-                        placeholder="Enter your password"
+                        placeholder="Create a password"
                         placeholderTextColor="#999"
                         value={password}
                         onChangeText={setPassword}
@@ -141,29 +130,20 @@ export default function LoginScreen() {
                 </View>
               </View>
               
-              <TouchableOpacity style={styles.forgotPassword}>
-                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-              </TouchableOpacity>
-
               <TouchableOpacity 
-                style={[styles.loginButton, loading && styles.loginButtonDisabled]} 
-                onPress={handleLogin}
+                style={[styles.signupButton, loading && styles.signupButtonDisabled]} 
+                onPress={handleSignup}
                 disabled={loading}
               >
                 {loading ? (
                     <ActivityIndicator color="#fff" />
                 ) : (
-                    <Text style={styles.loginButtonText}>LOGIN</Text>
+                    <Text style={styles.signupButtonText}>SIGN UP</Text>
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.homeButton} onPress={handleGoToHome}>
-                <Text style={styles.homeButtonText}>Go to Home (Guest)</Text>
-              </TouchableOpacity>
-
-              {/* Updated Link to Signup Screen */}
-              <TouchableOpacity style={styles.linkButton} onPress={() => router.push('/signup')}>
-                <Text style={styles.linkText}>Don't have an account? Sign up</Text>
+              <TouchableOpacity style={styles.loginLink} onPress={() => router.push('/login')}>
+                <Text style={styles.loginLinkText}>Already have an account? <Text style={styles.loginLinkBold}>Login</Text></Text>
               </TouchableOpacity>
 
             </View>
@@ -183,6 +163,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',     
     padding: 20,
   },
+  
   webCard: {
     width: '100%',
     maxWidth: 480, 
@@ -197,11 +178,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#eaeaea',
   },
+
   mobileContainer: {
     width: '100%',
     flex: 1,
     justifyContent: 'center',
   },
+
   title: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -241,7 +224,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#e1e1e1',
-    marginBottom: 20,
     // @ts-ignore
     outlineStyle: 'none',
   },
@@ -249,21 +231,13 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     fontSize: 16,
+    // @ts-ignore
+    outlineStyle: 'none',
   },
   toggleButton: {
       paddingHorizontal: 15,
   },
-  forgotPassword: {
-      alignSelf: 'flex-end',
-      marginBottom: 25,
-      marginTop: -10,
-  },
-  forgotPasswordText: {
-      color: '#ff6b35',
-      fontSize: 14,
-      fontWeight: '600',
-  },
-  loginButton: {
+  signupButton: {
     backgroundColor: '#ff6b35',
     paddingVertical: 16,
     borderRadius: 12,
@@ -275,35 +249,25 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  loginButtonDisabled: {
+  signupButtonDisabled: {
     backgroundColor: '#ff9966',
   },
-  loginButtonText: {
+  signupButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  homeButton: {
-    backgroundColor: 'transparent',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 15,
-    borderWidth: 1,
-    borderColor: '#ff6b35',
-  },
-  homeButtonText: {
-    color: '#ff6b35',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  linkButton: {
+  loginLink: {
     marginTop: 24,
     alignItems: 'center',
   },
-  linkText: {
-    color: '#ff6b35',
+  loginLinkText: {
+    color: '#666',
     fontSize: 14,
     fontWeight: '600',
   },
+  loginLinkBold: {
+      color: '#ff6b35',
+      fontWeight: 'bold',
+  }
 });

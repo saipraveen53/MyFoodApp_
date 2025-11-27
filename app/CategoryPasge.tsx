@@ -15,12 +15,12 @@ import {
 import { Image } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker'; 
+import * as ImagePicker from 'expo-image-picker';
 import { rootApi, IMAGE_BASE_URL } from './axiosInstance';
-
-const screenWidth = Dimensions.get('window').width; 
-const DRAWER_WIDTH = 250; 
-
+ 
+const screenWidth = Dimensions.get('window').width;
+const DRAWER_WIDTH = 250;
+ 
 // --- SIDEBAR CONSTANTS ---
 const sidebarItems = [
    { icon: '🏠', label: 'Dashboard', route: '/AdminPage' },
@@ -29,36 +29,36 @@ const sidebarItems = [
     { icon: '🧑', label: 'Users', route: '/users' },
     { icon: '📅', label: 'Orders', route: '/orders' },
 ];
-
+ 
 // --- INTERFACES ---
 interface Category {
     id: number;
     name: string;
     imageUrl: string | null;
 }
-
+ 
 // --- REUSABLE COMPONENTS ---
 const SearchBar = ({ onSearchClose, isMobile }: { onSearchClose: () => void, isMobile: boolean }) => (
     <View style={[styles.searchBarContainer, isMobile && styles.searchBarContainerMobile]}>
         <Text style={styles.searchIconText}>🔍</Text>
-        <TextInput 
+        <TextInput
             style={styles.searchInput}
             placeholder="Search here..."
             placeholderTextColor="#999"
-            autoFocus={true} 
+            autoFocus={true}
         />
         <TouchableOpacity style={styles.searchCloseButton} onPress={onSearchClose}>
             <Text style={styles.searchCloseText}>&#10005;</Text>
         </TouchableOpacity>
     </View>
 );
-
+ 
 const LogoutDropdown = ({ positionStyle, onLogout, onClose }: any) => (
     <View style={[styles.logoutDropdown, positionStyle]}>
         <TouchableOpacity style={styles.dropdownCloseButton} onPress={onClose}>
-            <Text style={styles.dropdownCloseText}>&#10005;</Text> 
+            <Text style={styles.dropdownCloseText}>&#10005;</Text>
         </TouchableOpacity>
-        
+       
         <View style={styles.dropdownProfileInfo}>
              <Text style={styles.dropdownProfileName}>Emay Walter</Text>
              <Text style={styles.dropdownProfileRole}>Admin</Text>
@@ -68,10 +68,10 @@ const LogoutDropdown = ({ positionStyle, onLogout, onClose }: any) => (
         </TouchableOpacity>
     </View>
 );
-
+ 
 // --- SIDEBAR & HEADER COMPONENTS ---
 const SidebarContent = ({ isDarkMode }: any) => {
-    const router = useRouter(); 
+    const router = useRouter();
     return (
         <>
             <View style={styles.sidebarHeader}>
@@ -82,7 +82,7 @@ const SidebarContent = ({ isDarkMode }: any) => {
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
                 {sidebarItems.map((item, index) => (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         key={index}
                         style={[styles.sidebarItem, item.active && styles.sidebarItemActive]}
                         onPress={() => {
@@ -111,15 +111,15 @@ const Sidebar = ({ isDarkMode }: any) => (
         <SidebarContent isDarkMode={isDarkMode} />
     </View>
 );
-
+ 
 const WebHeader = ({ handleLogout, isDarkMode, toggleDarkMode }: any) => {
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-    const [isSearchOpen, setIsSearchOpen] = useState(false); 
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const profilePicRef = useRef<any>(null);
     const [profilePicLayout, setProfilePicLayout] = useState<any>(null);
-
+ 
     const toggleProfileDropdown = () => setIsProfileDropdownOpen(prev => !prev);
-    
+   
     const onProfilePicLayout = () => {
         if (!profilePicLayout) {
             profilePicRef.current.measureInWindow((x: number, y: number, width: number, height: number) => {
@@ -127,9 +127,9 @@ const WebHeader = ({ handleLogout, isDarkMode, toggleDarkMode }: any) => {
             });
         }
     };
-
+ 
     return (
-        <View style={styles.headerCardWrapper}> 
+        <View style={styles.headerCardWrapper}>
             <View style={[styles.headerCard, isDarkMode && darkStyles.headerCard]}>
                 <View style={styles.headerTitleGroup}>
                     <Text style={[styles.headerTitle, isDarkMode && darkStyles.textPrimary]}>Categories</Text>
@@ -144,8 +144,8 @@ const WebHeader = ({ handleLogout, isDarkMode, toggleDarkMode }: any) => {
                                 </TouchableOpacity>
                          
                     </View>
-                    <TouchableOpacity 
-                        style={[styles.userProfile, isDarkMode && darkStyles.userProfile]} 
+                    <TouchableOpacity
+                        style={[styles.userProfile, isDarkMode && darkStyles.userProfile]}
                         onPress={toggleProfileDropdown}
                         ref={profilePicRef}
                         onLayout={onProfilePicLayout}
@@ -164,15 +164,15 @@ const WebHeader = ({ handleLogout, isDarkMode, toggleDarkMode }: any) => {
         </View>
     );
 };
-
+ 
 const MobileHeader = ({ onHamburgerPress, handleLogout, isDarkMode, toggleDarkMode }: any) => {
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-    const [isSearchOpen, setIsSearchOpen] = useState(false); 
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const profilePicRef = useRef<any>(null);
     const [profilePicLayout, setProfilePicLayout] = useState<any>(null);
-
+ 
     const toggleProfileDropdown = () => setIsProfileDropdownOpen(prev => !prev);
-    
+   
     const onProfilePicLayout = () => {
         if (!profilePicLayout) {
             profilePicRef.current.measureInWindow((x: number, y: number, width: number, height: number) => {
@@ -180,7 +180,7 @@ const MobileHeader = ({ onHamburgerPress, handleLogout, isDarkMode, toggleDarkMo
             });
         }
     };
-
+ 
     return (
         <View style={{zIndex: 9000}}>
             {isSearchOpen ? (
@@ -210,13 +210,13 @@ const MobileHeader = ({ onHamburgerPress, handleLogout, isDarkMode, toggleDarkMo
         </View>
     );
 };
-
+ 
 // --- CATEGORY CARD COMPONENT ---
 const CategoryCard = ({ category, isDarkMode, isWeb, onEdit, onDelete }: { category: Category, isDarkMode: boolean, isWeb: boolean, onEdit: (cat: Category) => void, onDelete: (id: number) => void }) => {
-    const imageSource = category.imageUrl 
+    const imageSource = category.imageUrl
         ? { uri: category.imageUrl }
-        : require('../assets/images/p5.png'); 
-
+        : require('../assets/images/p5.png');
+ 
     return (
         <View style={[styles.categoryCard, isWeb && styles.categoryCardWeb, isDarkMode && darkStyles.categoryCard]}>
             <View style={styles.cardImageWrapper}>
@@ -270,21 +270,21 @@ const CategoryModal = ({ isVisible, onClose, onSave, isDarkMode, categoryToEdit 
     }, [isVisible, categoryToEdit]);
 
     if (!isVisible) return null;
-
+ 
     const pickImage = async () => {
         const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (permissionResult.granted === false) {
             Alert.alert('Permission Required', 'Permission to access media library is required!');
             return;
         }
-
+ 
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [16, 9],
             quality: 0.8,
         });
-
+ 
         if (!result.canceled) {
             const uri = result.assets[0].uri;
             setImageUri(uri);
@@ -293,30 +293,31 @@ const CategoryModal = ({ isVisible, onClose, onSave, isDarkMode, categoryToEdit 
             if (Platform.OS === 'web') {
                 setImageFile(result.assets[0].file);
             } else {
-                setImageFile(null); 
+                setImageFile(null);
             }
         }
     };
-
+ 
     const handleSave = () => {
         if (!name.trim()) {
             Alert.alert("Validation", "Category name is required");
             return;
         }
         if (!imageUri) {
+        if (!imageUri) {
             Alert.alert("Validation", "Please select an image for the category");
             return;
         }
         onSave(name, imageUri, imageFile);
     };
-
+ 
     return (
         <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, isDarkMode && darkStyles.modalContent]}>
                 <Text style={[styles.modalTitle, isDarkMode && darkStyles.textPrimary]}>
                     {categoryToEdit ? 'Edit Category' : 'Add New Category'}
                 </Text>
-                
+               
                 <View style={styles.inputContainer}>
                     <Text style={[styles.inputLabel, isDarkMode && darkStyles.textSecondary]}>Category Name</Text>
                     <TextInput
@@ -327,23 +328,23 @@ const CategoryModal = ({ isVisible, onClose, onSave, isDarkMode, categoryToEdit 
                         onChangeText={setName}
                     />
                 </View>
-
+ 
                 <View style={styles.inputContainer}>
                     <Text style={[styles.inputLabel, isDarkMode && darkStyles.textSecondary]}>Category Image</Text>
-                    <TouchableOpacity 
-                        style={[styles.imagePickerButton, imageUri && styles.imagePickerActive]} 
+                    <TouchableOpacity
+                        style={[styles.imagePickerButton, imageUri && styles.imagePickerActive]}
                         onPress={pickImage}
                     >
                         <Text style={styles.imagePickerButtonText}>
                             {imageUri ? '✅ Image Selected (Change)' : '🖼️ Pick Image'}
                         </Text>
                     </TouchableOpacity>
-                    
+                   
                     {imageUri && (
                         <Image source={{ uri: imageUri }} style={styles.imagePreview} contentFit="cover" />
                     )}
                 </View>
-
+ 
                 <View style={styles.modalActions}>
                     <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
                         <Text style={styles.modalCancelButtonText}>Cancel</Text>
@@ -358,24 +359,24 @@ const CategoryModal = ({ isVisible, onClose, onSave, isDarkMode, categoryToEdit 
         </View>
     );
 };
-
+ 
 // --- MAIN COMPONENT ---
 const CategoryPage = () => {
   const isWeb = Platform.OS === 'web';
   const router = useRouter();
-  
+ 
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  
+ 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
 
   const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current; 
 
   const toggleDarkMode = () => setIsDarkMode(prev => !prev);
-
+ 
   const toggleDrawer = () => {
     const newState = !isDrawerOpen;
     setIsDrawerOpen(newState);
@@ -385,20 +386,20 @@ const CategoryPage = () => {
         useNativeDriver: true,
     }).start();
   };
-
-  const handleLogout = async () => {
+ 
+const handleLogout = async () => {
       try {
           await AsyncStorage.removeItem('authToken');
-          await AsyncStorage.removeItem('roles'); 
+          await AsyncStorage.removeItem('roles');
           await AsyncStorage.removeItem('userToken');
           await AsyncStorage.removeItem('isAuthenticated');
           Alert.alert("Logged Out", "Logged out successfully! Redirecting to login...");
-          router.replace("/login"); 
+          router.replace("/login");
       } catch (error) {
           console.error("Error during logout:", error);
       }
   };
-
+ 
   // --- FETCH ---
   const fetchCategories = async () => {
       try {
@@ -412,7 +413,7 @@ const CategoryPage = () => {
           setLoading(false);
       }
   };
-
+ 
   useEffect(() => {
       fetchCategories();
   }, []);
@@ -421,6 +422,7 @@ const CategoryPage = () => {
   const handleSaveCategory = async (name: string, imageUri: string | null, imageFile: any) => {
       if (!name.trim()) {
           Alert.alert("Error", "Category name is required.");
+          return;
           return;
       }
       
@@ -451,7 +453,7 @@ const CategoryPage = () => {
           if (isNewImage && imageUri) {
               if (Platform.OS === 'web') {
                   if (imageFile) {
-                      formData.append('imageFile', imageFile); 
+                      formData.append('imageFile', imageFile);
                   }
               } else {
                   // --- ANDROID FIX STARTS HERE ---
@@ -467,7 +469,7 @@ const CategoryPage = () => {
                   formData.append('imageFile', {
                       uri: uri,
                       name: filename || `photo.jpg`,
-                      type: type, 
+                      type: type,
                   });
               }
           }
@@ -477,13 +479,15 @@ const CategoryPage = () => {
           const response = await rootApi[method](endpoint, formData, {
               headers: {
                   'Content-Type': 'multipart/form-data', // Usually 'undefined' is better for axios + formData but header might be needed here
+                  'Content-Type': 'multipart/form-data', // Usually 'undefined' is better for axios + formData but header might be needed here
                   'Authorization': `Bearer ${token}`
               },
               transformRequest: (data, headers) => {
                   return data; // Prevent axios from stringifying FormData
+                  return data; // Prevent axios from stringifying FormData
               },
           });
-
+ 
           if (response.data) {
               console.log("✅ Success:", response.data);
               Alert.alert("Success", successMessage);
@@ -495,11 +499,14 @@ const CategoryPage = () => {
                   setCategories(prev => [...prev, response.data]);
               }
           }
-
+ 
       } catch (error: any) {
           console.error(`❌ Failed to ${categoryToEdit ? 'update' : 'add'} category:`, error);
           
           if (error.response) {
+              Alert.alert("Server Error", `Code: ${error.response.status}\n${JSON.stringify(error.response.data)}`);
+          } else if (error.request) {
+              Alert.alert("Network Error", "Request failed. Check:\n1. You are on the same Wi-Fi\n2. Firewall is Off\n3. Backend is running");
               Alert.alert("Server Error", `Code: ${error.response.status}\n${JSON.stringify(error.response.data)}`);
           } else if (error.request) {
               Alert.alert("Network Error", "Request failed. Check:\n1. You are on the same Wi-Fi\n2. Firewall is Off\n3. Backend is running");
@@ -510,6 +517,7 @@ const CategoryPage = () => {
   };
 
   const handleEditCategory = (category: Category) => {
+      setCategoryToEdit(category);
       setCategoryToEdit(category);
       setIsModalVisible(true);
   };
@@ -522,11 +530,14 @@ const CategoryPage = () => {
   // --- HANDLE DELETE CATEGORY ---
   const handleDeleteCategory = async (id: number) => {
       // 1. Define the actual delete logic
+      // 1. Define the actual delete logic
       const performDelete = async () => {
           try {
               await rootApi.delete(`categories/delete/${id}`);
               // Update UI
+              // Update UI
               setCategories(prev => prev.filter(c => c.id !== id));
+              // Show success message only on mobile (Web updates visually)
               // Show success message only on mobile (Web updates visually)
               if (Platform.OS !== 'web') Alert.alert("Success", "Category deleted.");
           } catch (error: any) {
@@ -538,11 +549,16 @@ const CategoryPage = () => {
       // 2. Check Platform
       if (Platform.OS === 'web') {
           // WEB: Use browser native confirm dialog
+          // WEB: Use browser native confirm dialog
           const confirmed = window.confirm("Are you sure you want to delete this category?");
           if (confirmed) {
               performDelete();
           }
+          if (confirmed) {
+              performDelete();
+          }
       } else {
+          // MOBILE: Use Native Alert with buttons
           // MOBILE: Use Native Alert with buttons
           Alert.alert(
               "Delete Category",
@@ -558,20 +574,20 @@ const CategoryPage = () => {
           );
       }
   };
-
+ 
   return (
     <View style={[isWeb ? styles.containerWebLayout : styles.containerMobile, isDarkMode && darkStyles.containerWebLayout]}>
         {isWeb && <Sidebar isDarkMode={isDarkMode} />}
-        
+       
         <View style={[styles.mainContentArea, isDarkMode && darkStyles.mainContentArea]}>
             {!isWeb && <MobileHeader onHamburgerPress={toggleDrawer} handleLogout={handleLogout} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />}
-
-            <ScrollView 
-                contentContainerStyle={isWeb ? [styles.scrollContentWeb, isDarkMode && darkStyles.scrollContentWeb] : [styles.scrollContentMobile, isDarkMode && darkStyles.containerMobileBackground]} 
+ 
+            <ScrollView
+                contentContainerStyle={isWeb ? [styles.scrollContentWeb, isDarkMode && darkStyles.scrollContentWeb] : [styles.scrollContentMobile, isDarkMode && darkStyles.containerMobileBackground]}
                 showsVerticalScrollIndicator={false}
             >
                 {isWeb && <WebHeader handleLogout={handleLogout} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />}
-
+ 
                 <View style={[styles.pageContainer, isDarkMode && darkStyles.pageContainer]}>
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, isDarkMode && darkStyles.textPrimary]}>All Categories</Text>
@@ -585,7 +601,7 @@ const CategoryPage = () => {
                             <Text style={styles.addBtnText}>+ Add Category</Text>
                         </TouchableOpacity>
                     </View>
-                    
+                   
                     {loading ? (
                         <View style={styles.loadingContainer}>
                             <ActivityIndicator size="large" color="#ff6b35" />
@@ -594,11 +610,11 @@ const CategoryPage = () => {
                         <View style={styles.gridContainer}>
                             {categories.length > 0 ? (
                                 categories.map((cat) => (
-                                    <CategoryCard 
-                                        key={cat.id} 
-                                        category={cat} 
-                                        isDarkMode={isDarkMode} 
-                                        isWeb={isWeb} 
+                                    <CategoryCard
+                                        key={cat.id}
+                                        category={cat}
+                                        isDarkMode={isDarkMode}
+                                        isWeb={isWeb}
                                         onEdit={handleEditCategory}
                                         onDelete={handleDeleteCategory}
                                     />
@@ -613,35 +629,37 @@ const CategoryPage = () => {
                 </View>
             </ScrollView>
         </View>
-
+ 
         {!isWeb && (
             <Animated.View style={[styles.drawerOverlay, { opacity: drawerAnim.interpolate({ inputRange: [-DRAWER_WIDTH, 0], outputRange: [0, 1], extrapolate: 'clamp' }), pointerEvents: isDrawerOpen ? 'auto' : 'none' }]}>
                 <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={toggleDrawer} />
                 <Animated.View style={[styles.sidebar, { width: DRAWER_WIDTH, position: 'absolute', top: 0, left: 0, height: '100%', zIndex: 9999, transform: [{ translateX: drawerAnim }] }]} onStartShouldSetResponder={() => true}>
-                    <SidebarContent isDarkMode={isDarkMode} /> 
+                    <SidebarContent isDarkMode={isDarkMode} />
                 </Animated.View>
             </Animated.View>
         )}
-
-        <CategoryModal 
+ 
+        <CategoryModal
             isVisible={isModalVisible}
+            onClose={handleModalClose}
             onClose={handleModalClose}
             onSave={handleSaveCategory}
             isDarkMode={isDarkMode}
+            categoryToEdit={categoryToEdit}
             categoryToEdit={categoryToEdit}
         />
     </View>
   );
 }
-
+ 
 export default CategoryPage;
-
+ 
 // --- STYLES ---
 const DARK_BACKGROUND = '#1c1c1c';
 const DARK_CARD = '#2a2a2a';
 const DARK_TEXT_PRIMARY = '#ffffff';
 const DARK_TEXT_SECONDARY = '#b0b0b0';
-
+ 
 const darkStyles = StyleSheet.create({
     containerWebLayout: { backgroundColor: DARK_BACKGROUND },
     mainContentArea: { backgroundColor: DARK_BACKGROUND },
@@ -658,14 +676,14 @@ const darkStyles = StyleSheet.create({
     modalContent: { backgroundColor: DARK_CARD },
     modalInput: { backgroundColor: '#333', color: DARK_TEXT_PRIMARY, borderColor: '#444' },
 });
-
+ 
 const styles = StyleSheet.create({
     containerMobile: { flex: 1, backgroundColor: '#fff' },
     containerWebLayout: { flex: 1, flexDirection: 'row', backgroundColor: '#f0f2f5' },
     mainContentArea: { flex: 1, backgroundColor: Platform.OS === 'web' ? '#f0f2f5' : 'transparent' },
     scrollContentWeb: { paddingVertical: 20, paddingHorizontal: 20, alignSelf: 'center', width: '100%', maxWidth: 1400 },
     scrollContentMobile: { paddingBottom: 20, backgroundColor: '#f5f5f5' },
-    
+   
     // Header Styles
     headerCardWrapper: { marginBottom: 20, zIndex: 10 },
     headerCard: {
@@ -697,15 +715,19 @@ const styles = StyleSheet.create({
     profileImage: { width: 30, height: 30, borderRadius: 15 },
     profileName: { fontSize: 14, fontWeight: '600', color: '#333' },
     profileRole: { fontSize: 12, color: '#999' },
-    
+   
     // Mobile Header Styles
+// Mobile Header Styles
     mobileHeaderContainer: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         paddingHorizontal: 15, paddingVertical: 10, backgroundColor: '#fff',
         marginBottom: 10, marginTop: 10, zIndex: 9000,
         paddingTop: 45,      // Adjust this value (e.g., 40-50) for more top space
         paddingBottom: 15,
+        paddingTop: 45,      // Adjust this value (e.g., 40-50) for more top space
+        paddingBottom: 15,
     },
+ 
     mobileHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     mobileLogoText: { fontSize: 22, fontWeight: 'bold', color: '#333' },
     mobileHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -715,7 +737,7 @@ const styles = StyleSheet.create({
     },
     mobileHamburgerIcon: { fontSize: 24, color: '#333', fontWeight: 'bold', transform: [{ scaleY: 0.8 }] },
     mobileIconText: { fontSize: 16 },
-
+ 
     // Search Bar Styles
     searchBarContainer: {
         flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 8,
@@ -735,7 +757,7 @@ searchBarContainerMobile: {
     searchIconText: { fontSize: 18, color: '#999' },
     searchCloseButton: { paddingHorizontal: 5 },
     searchCloseText: { fontSize: 18, color: '#999' },
-
+ 
     // Logout Dropdown
     logoutDropdown: {
         backgroundColor: '#fff', width: 180, borderRadius: 10, padding: 10,
@@ -758,7 +780,7 @@ searchBarContainerMobile: {
         alignItems: 'center', justifyContent: 'center', zIndex: 10,
     },
     dropdownCloseText: { fontSize: 18, color: '#999', fontWeight: 'bold' },
-
+ 
     // Sidebar
     sidebar: {
         width: 250, backgroundColor: '#272727', height: '100%', paddingVertical: 20, overflow: 'hidden',
@@ -779,13 +801,13 @@ searchBarContainerMobile: {
     sidebarItemText: { flex: 1, fontSize: 15, color: '#bbb', marginLeft: 10, fontWeight: '600' },
     sidebarItemTextActive: { color: '#272727', fontWeight: 'bold' },
     sidebarItemArrow: { fontSize: 16, color: '#bbb' },
-    
+   
     // Drawer Overlay
     drawerOverlay: {
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 9990, 
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 9990,
     },
-
+ 
     // --- Content Specific ---
     pageContainer: {
         paddingHorizontal: Platform.OS === 'web' ? 0 : 15,
@@ -799,10 +821,10 @@ searchBarContainerMobile: {
         backgroundColor: '#FF9500', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 8,
     },
     addBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-    
+   
     loadingContainer: { padding: 40, alignItems: 'center', justifyContent: 'center' },
     placeholderText: { color: '#999', fontSize: 16, textAlign: 'center', marginTop: 20 },
-
+ 
     gridContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -810,7 +832,7 @@ searchBarContainerMobile: {
         justifyContent: 'flex-start',
     },
     categoryCard: {
-        width: Platform.OS === 'web' ? 220 : '47%', 
+        width: Platform.OS === 'web' ? 220 : '47%',
         backgroundColor: '#fff',
         borderRadius: 12,
         borderWidth: 1,
@@ -862,15 +884,15 @@ searchBarContainerMobile: {
         fontWeight: '600',
         color: '#555',
     },
-
+ 
     // Modal Styles
     modalOverlay: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(0, 0, 0, 0.6)',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 10001, 
-        elevation: 100, 
+        zIndex: 10001,
+        elevation: 100,
     },
     modalContent: {
         width: Platform.OS === 'web' ? 450 : '90%',
@@ -956,7 +978,7 @@ searchBarContainerMobile: {
         }),
     },
     imagePickerActive: {
-        borderColor: '#34c759', 
+        borderColor: '#34c759',
     },
     imagePickerButtonText: {
         color: '#333',

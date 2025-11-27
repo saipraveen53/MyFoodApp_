@@ -987,6 +987,7 @@ const styles = StyleSheet.create({
     profileRole: { fontSize: 12, color: '#999' },
     
     // Mobile Header Styles
+   // Mobile Header Styles
     mobileHeaderContainer: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         paddingHorizontal: 15, paddingVertical: 10, backgroundColor: '#fff',
@@ -994,6 +995,7 @@ const styles = StyleSheet.create({
         paddingTop: 45,      // Adjust this value (e.g., 40-50) for more top space
         paddingBottom: 15,
     },
+ 
     mobileHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     mobileLogoText: { fontSize: 22, fontWeight: 'bold', color: '#333' },
     mobileHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 5 },

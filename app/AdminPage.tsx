@@ -1505,6 +1505,7 @@ const styles = StyleSheet.create({
     // --- END SEARCH BAR STYLES ---
 
     // --- MOBILE HEADER STYLES ---
+    // Mobile Header Styles
     mobileHeaderContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -1518,6 +1519,7 @@ const styles = StyleSheet.create({
         marginTop:10,
         zIndex: 9000,
     },
+ 
     mobileHeaderLeft: {
         flexDirection: 'row',
         alignItems: 'center',

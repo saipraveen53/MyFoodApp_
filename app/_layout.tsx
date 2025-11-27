@@ -1,5 +1,6 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, usePathname } from 'expo-router'; // 1. Import usePathname
+import { Stack, usePathname } from 'expo-router'; // 1. Import usePathname
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { useEffect } from 'react'; 
@@ -10,8 +11,9 @@ import { FoodProvider } from './FoodContext';
 
 export const unstable_settings = {
   initialRouteName: 'index',
+  initialRouteName: 'index',
 };
-
+ 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const pathname = usePathname(); // 3. Get current route path

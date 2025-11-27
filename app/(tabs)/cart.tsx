@@ -631,7 +631,7 @@ export default function CartScreen() {
                           <Text style={styles.outlineButtonText}>SIGN IN</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.outlineButton} onPress={() => router.push('/login')}>
+                        <TouchableOpacity style={styles.outlineButton} onPress={() => router.push('/signup')}>
                           <Text style={styles.outlineButtonText}>SIGN UP</Text>
                         </TouchableOpacity>
                       </View>

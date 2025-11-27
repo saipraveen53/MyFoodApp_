@@ -246,7 +246,7 @@ const OffersScrollSection = ({ offers, isLoading, isDarkMode, isWeb, onAddOffer,
             styles.offersCardWrapper, 
             isDarkMode && darkStyles.sectionContainer, 
             isWeb && styles.offersWebWrapper
-        ]}
+        ]} 
     >
         <View style={[styles.sectionHeader, styles.offersHeaderPadding]}>
             <Text style={[styles.sectionTitle, {marginBottom: 0}, isDarkMode && darkStyles.textPrimary]}>Current Offers</Text>

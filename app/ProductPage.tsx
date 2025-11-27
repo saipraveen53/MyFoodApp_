@@ -11,11 +11,16 @@ import {
     Dimensions,
     Alert,
     ActivityIndicator,
+    Modal,
+    KeyboardAvoidingView
 } from 'react-native';
 import { Image } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { rootApi } from './axiosInstance'; 
+import * as ImagePicker from 'expo-image-picker';
+import DropDownPicker from 'react-native-dropdown-picker'; 
+import { rootApi, IMAGE_BASE_URL } from './axiosInstance'; 
+import { Ionicons } from '@expo/vector-icons'; 
 
 // Get screen dimensions and define drawer width
 const screenWidth = Dimensions.get('window').width; 
@@ -23,26 +28,11 @@ const DRAWER_WIDTH = 250;
 
 // --- SIDEBAR CONSTANTS ---
 const sidebarItems = [
-    { icon: '🏠', label: 'Dashboard', route: '/AdminPage' },
+    { icon: '🏠', label: 'Dashboard', route: '/AdminPage'},
     { icon: '📦', label: 'Product', route: '/ProductPage', active: true },
-    { icon: '🏷️', label: 'Category', route: '/CategoryPasge' },
-    { icon: '⚙️', label: 'Attributes', route: '/attributes' },
-    { icon: '🏢', label: 'Restaurants', route: '/restaurants' },
-    { icon: '🚚', label: 'Drivers', route: '/drivers' },
-    { icon: '🍔', label: 'Foods', route: '/foods' },
+    { icon: '🏷️', label: 'Category', route: '/CategoryPasge' }, // Fixed typo
     { icon: '🧑', label: 'Users', route: '/users' },
-    { icon: '👥', label: 'Roles', route: '/roles' },
-    { icon: '📰', label: 'Media', route: '/media' },
-    { icon: '📍', label: 'Live Traking', route: '/live-tracking' },
     { icon: '📅', label: 'Orders', route: '/orders' },
-    { icon: '🧭', label: 'Localization', route: '/localization' },
-    { icon: '🎫', label: 'Coupons', route: '/coupons' },
-    { icon: '🪙', label: 'Tax', route: '/tax' },
-    { icon: '⭐️', label: 'Product Review', route: '/review' },
-    { icon: '📞', label: 'Support Ticket', route: '/support' },
-    { icon: '🛠️', label: 'Settings', route: '/settings' },
-    { icon: '📊', label: 'Reports', route: '/reports' },
-    { icon: '📋', label: 'List Page', route: '/list' },
 ];
 
 // --- INTERFACES ---
@@ -60,24 +50,12 @@ interface Product {
     imageUrl: string;
     rating: number;
     menuCategory: MenuCategory;
+    active?: boolean; 
 }
 
 // --- REUSABLE COMPONENTS ---
 
-const SearchBar = ({ onSearchClose, isMobile }: { onSearchClose: () => void, isMobile: boolean }) => (
-    <View style={[styles.searchBarContainer, isMobile && styles.searchBarContainerMobile]}>
-        <Text style={styles.searchIconText}>🔍</Text>
-        <TextInput 
-            style={styles.searchInput}
-            placeholder="Search here..."
-            placeholderTextColor="#999"
-            autoFocus={true} 
-        />
-        <TouchableOpacity style={styles.searchCloseButton} onPress={onSearchClose}>
-            <Text style={styles.searchCloseText}>&#10005;</Text>
-        </TouchableOpacity>
-    </View>
-);
+
 
 const LogoutDropdown = ({ positionStyle, onLogout, onClose }: any) => (
     <View style={[styles.logoutDropdown, positionStyle]}>
@@ -107,9 +85,9 @@ const SidebarContent = ({ isDarkMode }: any) => {
         <>
             <View style={styles.sidebarHeader}>
                 <Text style={styles.sidebarLogoText}>ZOMO.</Text>
-                <TouchableOpacity style={styles.sidebarUtilityIcon}>
+                {/* <TouchableOpacity style={styles.sidebarUtilityIcon}>
                     <Text style={styles.sidebarIconText}>&#8861;</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
             
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -178,28 +156,15 @@ const WebHeader = ({ handleLogout, isDarkMode, toggleDarkMode }: any) => {
                 
                 <View style={styles.headerButtonGroup}>
                     <View style={styles.iconButtons}>
-                        {isSearchOpen ? (
-                            <SearchBar onSearchClose={() => setIsSearchOpen(false)} isMobile={false} />
-                        ) : (
-                            <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={() => setIsSearchOpen(true)}>
-                                <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔍</Text>
-                            </TouchableOpacity>
-                        )}
                         
-                        {!isSearchOpen && (
-                            <>
-                                <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]}>
-                                    <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔔</Text>
-                                    <View style={styles.notificationBadge} />
-                                </TouchableOpacity>
 
                                 <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={toggleDarkMode}>
                                     <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>
                                         {isDarkMode ? '☀️' : '🌙'}
                                     </Text>
                                 </TouchableOpacity>
-                            </>
-                        )}
+                           
+                        
                     </View>
                     
                     <TouchableOpacity 
@@ -273,14 +238,6 @@ const MobileHeader = ({ onHamburgerPress, handleLogout, isDarkMode, toggleDarkMo
                     </View>
 
                     <View style={styles.mobileHeaderRight}>
-                        <TouchableOpacity style={[styles.mobileIconContainer, isDarkMode && darkStyles.iconButton]} onPress={() => setIsSearchOpen(true)}>
-                            <Text style={[styles.mobileIconText, isDarkMode && darkStyles.textPrimary]}>🔍</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]}>
-                            <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔔</Text>
-                            <View style={styles.notificationBadge} />
-                        </TouchableOpacity>
                         
                         <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={toggleDarkMode}>
                             <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>
@@ -320,61 +277,311 @@ const MobileHeader = ({ onHamburgerPress, handleLogout, isDarkMode, toggleDarkMo
 };
 
 // --- PRODUCT CARD COMPONENT ---
-// 1. Updated Interface to accept onDelete prop
 const ProductCard = ({ 
     product, 
     isDarkMode, 
     isWeb, 
-    onDelete 
+    onDelete,
+    onEdit,
+    onActivate, 
+    isArchived = false
 }: { 
     product: Product, 
     isDarkMode: boolean, 
     isWeb: boolean, 
-    onDelete: (id: number) => void 
-}) => (
-    <View style={[styles.productCard, isWeb && styles.productCardWeb, isDarkMode && darkStyles.productCard]}>
-        <View style={styles.productImageContainer}>
-            <Image 
-                source={{ uri: product.imageUrl }} 
-                style={styles.productImage} 
-                contentFit="cover" 
-            />
-            <View style={styles.ratingBadge}>
-                <Text style={styles.ratingText}>⭐ {product.rating}</Text>
+    onDelete: (id: number) => void,
+    onEdit: (product: Product) => void,
+    onActivate?: (id: number) => void,
+    isArchived?: boolean
+}) => {
+    const imageSource = product.imageUrl?.startsWith('http') 
+        ? { uri: product.imageUrl }
+        : { uri: `${IMAGE_BASE_URL}/${product.imageUrl}` };
+
+    return (
+        <View style={[
+            styles.productCard, 
+            isWeb && styles.productCardWeb, 
+            isDarkMode && darkStyles.productCard,
+            isArchived && styles.archivedProductCard
+        ]}>
+            <View style={styles.productImageContainer}>
+                <Image 
+                    source={imageSource} 
+                    style={[styles.productImage, isArchived && { opacity: 0.6 }]} 
+                    contentFit="cover" 
+                />
+                <View style={styles.ratingBadge}>
+                    <Text style={styles.ratingText}>⭐ {product.rating}</Text>
+                </View>
+                
+                {isArchived && (
+                    <TouchableOpacity 
+                        style={styles.outOfStockOverlay} 
+                        onPress={() => onActivate && onActivate(product.id)} 
+                    >
+                        <Text style={styles.outOfStockText}>Out of Stock (Tap to Activate)</Text>
+                    </TouchableOpacity>
+                )}
             </View>
-        </View>
-        
-        <View style={styles.productInfo}>
-            <View style={styles.productHeaderRow}>
-                <Text style={[styles.productName, isDarkMode && darkStyles.textPrimary]} numberOfLines={1}>
-                    {product.name}
+            
+            <View style={[styles.productInfo, isArchived && { opacity: 0.5 }]}>
+                <View style={styles.productHeaderRow}>
+                    <Text style={[styles.productName, isDarkMode && darkStyles.textPrimary]} numberOfLines={1}>
+                        {product.name}
+                    </Text>
+                    <Text style={styles.productPrice}>${product.price}</Text>
+                </View>
+                
+                <Text style={[styles.productCategory, isDarkMode && darkStyles.textSecondary]}>
+                    {product.menuCategory?.name || 'Uncategorized'}
                 </Text>
-                <Text style={styles.productPrice}>${product.price}</Text>
-            </View>
-            
-            <Text style={[styles.productCategory, isDarkMode && darkStyles.textSecondary]}>
-                {product.menuCategory?.name || 'Uncategorized'}
-            </Text>
-            
-            <Text style={[styles.productDescription, isDarkMode && darkStyles.textSecondary]} numberOfLines={2}>
-                {product.description}
-            </Text>
-            
-            <View style={styles.cardActions}>
-                <TouchableOpacity style={styles.actionButton}>
-                    <Text style={styles.actionButtonText}>Edit</Text>
-                </TouchableOpacity>
-                {/* 2. Connected Delete Button */}
-                <TouchableOpacity 
-                    style={[styles.actionButton, styles.deleteButton]}
-                    onPress={() => onDelete(product.id)}
-                >
-                    <Text style={styles.actionButtonText}>Delete</Text>
-                </TouchableOpacity>
+                
+                <Text style={[styles.productDescription, isDarkMode && darkStyles.textSecondary]} numberOfLines={2}>
+                    {product.description}
+                </Text>
+                
+                <View style={styles.cardActions}>
+                    <TouchableOpacity 
+                        style={styles.actionButton}
+                        onPress={() => onEdit(product)} 
+                        disabled={isArchived} 
+                    >
+                        <Text style={styles.actionButtonText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        style={[styles.actionButton, styles.deleteButton]}
+                        onPress={() => onDelete(product.id)}
+                    >
+                        <Text style={styles.actionButtonText}>Delete</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </View>
-    </View>
-);
+    );
+};
+
+// --- ADD/EDIT PRODUCT MODAL ---
+const ProductModal = ({ isVisible, onClose, onSave, isDarkMode, productToEdit }: any) => {
+    const isEditMode = !!productToEdit;
+
+    const [open, setOpen] = useState(false);
+    const [categoryValue, setCategoryValue] = useState(null);
+    const [categoryItems, setCategoryItems] = useState([]);
+
+    const [name, setName] = useState('');
+    const [price, setPrice] = useState('');
+    const [description, setDescription] = useState('');
+    const [rating, setRating] = useState('');
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [imageFile, setImageFile] = useState<any>(null);
+
+    useEffect(() => {
+        if (isVisible) {
+            const fetchCategories = async () => {
+                try {
+                    const response = await rootApi.get('categories/all');
+                    if (response.data) {
+                        const mapped = response.data.map((c: any) => ({
+                            label: `${c.name} (${c.id})`,
+                            value: c.id
+                        }));
+                        setCategoryItems(mapped);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch categories in modal", e);
+                }
+            };
+            fetchCategories();
+
+            if (productToEdit) {
+                setCategoryValue(productToEdit.menuCategory?.id || null);
+                setName(productToEdit.name);
+                setPrice(productToEdit.price?.toString() || '');
+                setDescription(productToEdit.description);
+                setRating(productToEdit.rating?.toString() || '');
+                
+                const img = productToEdit.imageUrl;
+                const fullUri = img?.startsWith('http') ? img : `${IMAGE_BASE_URL}/${img}`;
+                setImageUri(fullUri);
+                setImageFile(null);
+            } else {
+                setCategoryValue(null);
+                setName('');
+                setPrice('');
+                setDescription('');
+                setRating('');
+                setImageUri(null);
+                setImageFile(null);
+            }
+        }
+        setOpen(false); 
+    }, [isVisible, productToEdit]);
+
+    if (!isVisible) return null;
+
+    const pickImage = async () => {
+        let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (permissionResult.granted === false) {
+            Alert.alert('Permission Required', 'Permission to access media library is required!');
+            return;
+        }
+
+        let pickerResult = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 0.8,
+        });
+
+        if (!pickerResult.canceled) {
+            const uri = pickerResult.assets[0].uri;
+            setImageUri(uri);
+            
+            if (Platform.OS === 'web') {
+                setImageFile(pickerResult.assets[0].file);
+            } else {
+                setImageFile(null); 
+            }
+        }
+    };
+
+    const handleSave = () => {
+        if (!name.trim() || !price || !description || !rating) {
+            Alert.alert("Validation Error", "Fields Name, Price, Description, Rating are required.");
+            return;
+        }
+        
+        const catId = categoryValue || productToEdit?.menuCategory?.id;
+
+        if (!isEditMode && !catId) {
+             Alert.alert("Validation Error", "Please select a category.");
+             return;
+        }
+
+        onSave(catId, name, price, description, rating, imageUri, imageFile);
+    };
+
+    return (
+        <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, isDarkMode && darkStyles.modalContent]}>
+                <View style={styles.modalHeader}>
+                    <Text style={[styles.modalTitle, isDarkMode && darkStyles.textPrimary]}>
+                        {isEditMode ? 'Edit Product' : 'Add New Product'}
+                    </Text>
+                    <TouchableOpacity onPress={onClose}>
+                        <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#333'} />
+                    </TouchableOpacity>
+                </View>
+
+                <ScrollView 
+                    contentContainerStyle={{paddingBottom: 20}} 
+                    nestedScrollEnabled={true} 
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {/* 🚩 MODAL MODE for Dropdown (Fixes Scrolling on Android) */}
+                    <View style={[styles.inputContainer, { zIndex: 2000 }]}>
+                        <Text style={[styles.inputLabel, isDarkMode && darkStyles.textSecondary]}>Category</Text>
+                        <DropDownPicker
+                            open={open}
+                            value={categoryValue}
+                            items={categoryItems}
+                            setOpen={setOpen}
+                            setValue={setCategoryValue}
+                            setItems={setCategoryItems}
+                            placeholder="Select Category"
+                            style={[
+                                styles.dropdownStyle, 
+                                isDarkMode && { backgroundColor: '#f5f5f5', borderColor: '#eee' }
+                            ]}
+                            // Using MODAL mode ensures it opens in a scrollable overlay
+                            listMode="MODAL" 
+                            modalTitle="Select Category"
+                            modalAnimationType="slide"
+                            disabled={isEditMode} 
+                            textStyle={{ fontSize: 16, color: '#333' }}
+                        />
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                        <Text style={[styles.inputLabel, isDarkMode && darkStyles.textSecondary]}>Product Name</Text>
+                        <TextInput
+                            style={[styles.modalInput, isDarkMode && darkStyles.modalInput]}
+                            placeholder="e.g., Chicken Puff"
+                            placeholderTextColor={isDarkMode ? '#555' : '#aaa'}
+                            value={name}
+                            onChangeText={setName}
+                        />
+                    </View>
+
+                    <View style={styles.rowInputs}>
+                        <View style={[styles.inputContainer, { flex: 1, marginRight: 10 }]}>
+                            <Text style={[styles.inputLabel, isDarkMode && darkStyles.textSecondary]}>Price</Text>
+                            <TextInput
+                                style={[styles.modalInput, isDarkMode && darkStyles.modalInput]}
+                                placeholder="e.g., 150"
+                                placeholderTextColor={isDarkMode ? '#555' : '#aaa'}
+                                value={price}
+                                onChangeText={setPrice}
+                                keyboardType="numeric"
+                            />
+                        </View>
+                        <View style={[styles.inputContainer, { flex: 1 }]}>
+                            <Text style={[styles.inputLabel, isDarkMode && darkStyles.textSecondary]}>Rating</Text>
+                            <TextInput
+                                style={[styles.modalInput, isDarkMode && darkStyles.modalInput]}
+                                placeholder="e.g., 4.5"
+                                placeholderTextColor={isDarkMode ? '#555' : '#aaa'}
+                                value={rating}
+                                onChangeText={setRating}
+                                keyboardType="numeric"
+                            />
+                        </View>
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                        <Text style={[styles.inputLabel, isDarkMode && darkStyles.textSecondary]}>Description</Text>
+                        <TextInput
+                            style={[styles.modalInput, styles.modalDescriptionInput, isDarkMode && darkStyles.modalInput]}
+                            placeholder="Product description..."
+                            placeholderTextColor={isDarkMode ? '#555' : '#aaa'}
+                            value={description}
+                            onChangeText={setDescription}
+                            multiline
+                            numberOfLines={3}
+                        />
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                        <Text style={[styles.inputLabel, isDarkMode && darkStyles.textSecondary]}>Product Image</Text>
+                        <TouchableOpacity 
+                            style={[styles.imagePickerButton, imageUri && styles.imagePickerActive]} 
+                            onPress={pickImage}
+                        >
+                            <Text style={styles.imagePickerButtonText}>
+                                {imageUri ? '✅ Image Selected (Change)' : '🖼️ Pick Image'}
+                            </Text>
+                        </TouchableOpacity>
+                        {imageUri && (
+                             <Image source={{ uri: imageUri }} style={styles.imagePreview} contentFit="cover" />
+                        )}
+                    </View>
+                </ScrollView>
+
+                <View style={styles.modalActions}>
+                    <TouchableOpacity style={styles.modalCancelButton} onPress={onClose}>
+                        <Text style={styles.modalCancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.modalSaveButton} onPress={handleSave}>
+                        <Text style={styles.modalSaveButtonText}>
+                            {isEditMode ? 'Update Product' : 'Add Product'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </View>
+    );
+};
 
 // --- MAIN PRODUCT PAGE COMPONENT ---
 const ProductPage = () => {
@@ -384,7 +591,11 @@ const ProductPage = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [archivedProducts, setArchivedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const drawerAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current; 
 
@@ -414,17 +625,21 @@ const ProductPage = () => {
       }
   };
 
-  // FETCH PRODUCTS
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
   const fetchProducts = async () => {
+    setLoading(true);
     try {
-        const response = await rootApi.get('items/allItems');
-        if (response.data) {
-            setProducts(response.data);
+        const [allItemsRes, archivedRes] = await Promise.all([
+            rootApi.get('items/allItems'),
+            rootApi.get('items/archieved')
+        ]);
+
+        if (allItemsRes.data) {
+            setProducts(allItemsRes.data);
         }
+        if (archivedRes.data) {
+            setArchivedProducts(archivedRes.data);
+        }
+
     } catch (error) {
         console.error("Failed to fetch products:", error);
     } finally {
@@ -432,14 +647,104 @@ const ProductPage = () => {
     }
   };
 
-  // 3. HANDLE DELETE PRODUCT
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const handleOpenAdd = () => {
+      setEditingProduct(null);
+      setIsAddModalVisible(true);
+  };
+
+  const handleOpenEdit = (product: Product) => {
+      setEditingProduct(product);
+      setIsAddModalVisible(true);
+  };
+
+  const handleSaveProduct = async (categoryId: string, name: string, price: string, description: string, rating: string, imageUri: string, imageFile: any) => {
+      setIsAddModalVisible(false); 
+
+      try {
+          const isUpdate = !!editingProduct;
+          const productId = editingProduct?.id;
+
+          const queryParams = new URLSearchParams({
+              name: name,
+              price: price,
+              description: description,
+              rating: rating
+          }).toString();
+
+          let endpoint;
+          let method;
+
+          if (isUpdate) {
+              endpoint = `items/update/${productId}?${queryParams}`;
+              method = 'put';
+          } else {
+              endpoint = `items/addItem/${categoryId}?${queryParams}`;
+              method = 'post';
+          }
+
+          const formData = new FormData();
+          
+          const isNewImagePicked = imageUri && !(imageUri.startsWith('http') || imageUri.startsWith(IMAGE_BASE_URL));
+
+          if (isNewImagePicked) {
+              if (Platform.OS === 'web') {
+                  if (imageFile) {
+                      formData.append('imageFile', imageFile);
+                  }
+              } else {
+                  if (imageUri) {
+                      const filename = imageUri.split('/').pop() || 'image.jpg';
+                      const match = /\.(\w+)$/.exec(filename);
+                      const type = match ? `image/${match[1] === 'jpg' ? 'jpeg' : match[1]}` : `image/jpeg`;
+
+                      let uri = imageUri;
+                      if (!uri.startsWith('file://') && !uri.startsWith('content://')) {
+                           uri = 'file://' + uri;
+                      }
+                      
+                      // @ts-ignore
+                      formData.append('imageFile', {
+                          uri: uri,
+                          name: filename,
+                          type: type,
+                      });
+                  }
+              }
+          }
+          
+          const response = await rootApi[method](endpoint, formData, {
+              headers: {
+                  "Content-Type": "multipart/form-data", 
+              },
+              transformRequest: (data) => data, 
+          });
+
+          if (response.status === 200 || response.status === 201) {
+              Alert.alert("Success", `Product ${isUpdate ? 'updated' : 'added'} successfully!`);
+              fetchProducts(); 
+          }
+
+      } catch (error: any) {
+          console.error("Failed to save product:", error);
+          const errMsg = error.response?.data?.message || error.message || "Operation failed";
+          Alert.alert("Error", errMsg);
+      }
+  };
+
   const handleDeleteProduct = async (id: number) => {
     const performDelete = async () => {
         try {
-            await rootApi.delete(`items/delete/${id}`);
-            // Optimistic update: Remove from local state immediately
+            await rootApi.put(`items/delete/${id}`);
             setProducts(prevProducts => prevProducts.filter(p => p.id !== id));
+            setArchivedProducts(prev => prev.filter(p => p.id !== id));
+            
             if (!isWeb) Alert.alert("Success", "Product deleted successfully");
+            
+            fetchProducts();
         } catch (error) {
             console.error("Failed to delete product:", error);
             Alert.alert("Error", "Failed to delete product. Please try again.");
@@ -459,6 +764,17 @@ const ProductPage = () => {
                 { text: "Delete", style: "destructive", onPress: performDelete }
             ]
         );
+    }
+  };
+
+  const handleActivateProduct = async (id: number) => {
+    try {
+        await rootApi.put(`items/activate/${id}`);
+        Alert.alert("Success", "Product activated successfully");
+        fetchProducts();
+    } catch (error) {
+        console.error("Activation failed", error);
+        Alert.alert("Error", "Failed to activate product");
     }
   };
 
@@ -492,7 +808,10 @@ const ProductPage = () => {
                 <View style={[styles.productsContainer, isDarkMode && darkStyles.productsContainer]}>
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, isDarkMode && darkStyles.textPrimary]}>All Products</Text>
-                        <TouchableOpacity style={styles.addProductBtn}>
+                        <TouchableOpacity 
+                            style={styles.addProductBtn} 
+                            onPress={handleOpenAdd}
+                        >
                             <Text style={styles.addProductBtnText}>+ Add New</Text>
                         </TouchableOpacity>
                     </View>
@@ -502,23 +821,48 @@ const ProductPage = () => {
                             <ActivityIndicator size="large" color="#ff6b35" />
                         </View>
                     ) : (
-                        <View style={styles.productsGrid}>
-                            {products.length > 0 ? (
-                                products.map((item) => (
-                                    <ProductCard 
-                                        key={item.id} 
-                                        product={item} 
-                                        isDarkMode={isDarkMode} 
-                                        isWeb={isWeb}
-                                        onDelete={handleDeleteProduct} // Pass the handler
-                                    />
-                                ))
-                            ) : (
-                                <Text style={[styles.noDataText, isDarkMode && darkStyles.textSecondary]}>
-                                    No products found.
-                                </Text>
+                        <>
+                            <View style={styles.productsGrid}>
+                                {products.length > 0 ? (
+                                    products.map((item) => (
+                                        <ProductCard 
+                                            key={item.id} 
+                                            product={item} 
+                                            isDarkMode={isDarkMode} 
+                                            isWeb={isWeb}
+                                            onDelete={handleDeleteProduct} 
+                                            onEdit={handleOpenEdit} 
+                                        />
+                                    ))
+                                ) : (
+                                    <Text style={[styles.noDataText, isDarkMode && darkStyles.textSecondary]}>
+                                        No active products found.
+                                    </Text>
+                                )}
+                            </View>
+
+                            {archivedProducts.length > 0 && (
+                                <>
+                                    <View style={[styles.sectionHeader, { marginTop: 40, borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 20 }]}>
+                                         <Text style={[styles.sectionTitle, isDarkMode && darkStyles.textPrimary, { color: '#888' }]}>Archived / Out of Stock</Text>
+                                    </View>
+                                    <View style={styles.productsGrid}>
+                                        {archivedProducts.map((item) => (
+                                            <ProductCard 
+                                                key={item.id} 
+                                                product={item} 
+                                                isDarkMode={isDarkMode} 
+                                                isWeb={isWeb}
+                                                onDelete={handleDeleteProduct} 
+                                                onEdit={handleOpenEdit} 
+                                                isArchived={true} 
+                                                onActivate={handleActivateProduct} 
+                                            />
+                                        ))}
+                                    </View>
+                                </>
                             )}
-                        </View>
+                        </>
                     )}
                 </View>
 
@@ -563,6 +907,15 @@ const ProductPage = () => {
                 </Animated.View>
             </Animated.View>
         )}
+
+        <ProductModal 
+            isVisible={isAddModalVisible}
+            onClose={() => setIsAddModalVisible(false)}
+            onSave={handleSaveProduct}
+            isDarkMode={isDarkMode}
+            productToEdit={editingProduct} 
+        />
+
     </View>
   );
 }
@@ -587,7 +940,11 @@ const darkStyles = StyleSheet.create({
     userProfile: { backgroundColor: DARK_CARD },
     containerMobileBackground: { backgroundColor: DARK_BACKGROUND },
     productCard: { backgroundColor: DARK_CARD, borderColor: '#444' },
-    productsContainer: { backgroundColor: 'transparent' }, 
+    productsContainer: { backgroundColor: 'transparent' },
+    
+    // Modal Dark Mode
+    modalContent: { backgroundColor: DARK_CARD },
+    modalInput: { backgroundColor: '#333', color: DARK_TEXT_PRIMARY, borderColor: '#444' },
 });
 
 const styles = StyleSheet.create({
@@ -634,6 +991,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         paddingHorizontal: 15, paddingVertical: 10, backgroundColor: '#fff',
         marginBottom: 10, marginTop: 10, zIndex: 9000,
+        paddingTop: 45,      // Adjust this value (e.g., 40-50) for more top space
+        paddingBottom: 15,
     },
     mobileHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     mobileLogoText: { fontSize: 22, fontWeight: 'bold', color: '#333' },
@@ -652,7 +1011,15 @@ const styles = StyleSheet.create({
         shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05,
         shadowRadius: 3, elevation: 1,
     },
-    searchBarContainerMobile: { width: '100%', borderRadius: 0, paddingVertical: 12, marginBottom: 10 },
+    searchBarContainerMobile: {
+    width: '100%',
+    borderRadius: 0, 
+    paddingVertical: 12,
+    marginBottom: 10,
+    paddingHorizontal: 15,
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'android' ? 45 : 50, // 👈 Add this line to pull it down
+  },
     searchInput: { flex: 1, fontSize: 16, paddingHorizontal: 10, color: '#333', ...Platform.select({ web: { outlineStyle: 'none' } }) },
     searchIconText: { fontSize: 18, color: '#999' },
     searchCloseButton: { paddingHorizontal: 5 },
@@ -689,7 +1056,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         paddingHorizontal: 15, marginBottom: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: '#444',
     },
-    sidebarLogoText: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
+    sidebarLogoText: { fontSize: 22, fontWeight: 'bold', color: '#fff',paddingTop:40  },
     sidebarUtilityIcon: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
     sidebarIconText: { fontSize: 20, color: '#fff' },
     sidebarItem: {
@@ -729,10 +1096,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 15,
-        justifyContent: 'flex-start', // Align grid items to start
+        justifyContent: 'flex-start', 
     },
     productCard: {
-        width: '47%', // Mobile: 2 per row approx
+        width: '47%', 
         backgroundColor: '#fff',
         borderRadius: 12,
         marginBottom: 10,
@@ -743,7 +1110,11 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05, shadowRadius: 5, elevation: 2,
     },
     productCardWeb: {
-        width: 250, // Web: fixed width cards
+        width: 250, 
+    },
+    archivedProductCard: {
+        backgroundColor: '#f9f9f9', 
+        borderColor: '#eee',
     },
     productImageContainer: {
         height: 160,
@@ -756,7 +1127,23 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4,
     },
     ratingText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-    
+    outOfStockOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10
+    },
+    outOfStockText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+        backgroundColor: '#ff3b30',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 4,
+        transform: [{ rotate: '-10deg' }],
+    },
     productInfo: { padding: 12 },
     productHeaderRow: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6,
@@ -771,7 +1158,7 @@ const styles = StyleSheet.create({
         fontSize: 12, color: '#999', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5,
     },
     productDescription: {
-        fontSize: 13, color: '#666', marginBottom: 15, height: 36, // Fixed height for 2 lines
+        fontSize: 13, color: '#666', marginBottom: 15, height: 36,
     },
     cardActions: {
         flexDirection: 'row', gap: 10,
@@ -789,5 +1176,138 @@ const styles = StyleSheet.create({
     },
     actionButtonText: {
         fontSize: 12, fontWeight: '600', color: '#555',
+    },
+
+    // Modal Styles
+    modalOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10001,
+        elevation: 100,
+    },
+    modalContent: {
+        width: Platform.OS === 'web' ? 500 : '90%',
+        maxHeight: '90%',
+        backgroundColor: '#fff',
+        borderRadius: 15,
+        padding: 25,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+        elevation: 15,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    inputContainer: {
+        marginBottom: 15,
+    },
+    rowInputs: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#666',
+        marginBottom: 5,
+    },
+    modalInput: {
+        backgroundColor: '#f5f5f5',
+        padding: 12,
+        borderRadius: 8,
+        fontSize: 16,
+        borderWidth: 1,
+        borderColor: '#eee',
+        color: '#333',
+        ...Platform.select({
+            web: { outlineStyle: 'none' },
+        }),
+    },
+    modalDescriptionInput: {
+        minHeight: 80,
+        textAlignVertical: 'top',
+        paddingTop: 12,
+    },
+    modalActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+        gap: 10,
+    },
+    modalCancelButton: {
+        flex: 1,
+        backgroundColor: '#ccc',
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        ...Platform.select({ web: { cursor: 'pointer' } }),
+    },
+    modalCancelButtonText: {
+        color: '#333',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    modalSaveButton: {
+        flex: 1,
+        backgroundColor: '#FF9500',
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        ...Platform.select({ web: { cursor: 'pointer' } }),
+    },
+    modalSaveButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    imagePickerButton: {
+        backgroundColor: '#f5f5f5',
+        padding: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        alignItems: 'center',
+        marginBottom: 10,
+        ...Platform.select({
+            web: { cursor: 'pointer' },
+        }),
+    },
+    imagePickerActive: {
+        borderColor: '#34c759',
+    },
+    imagePickerButtonText: {
+        color: '#333',
+        fontWeight: '600',
+        fontSize: 16,
+    },
+    imagePreview: {
+        width: '100%',
+        aspectRatio: 16 / 9,
+        borderRadius: 8,
+        backgroundColor: '#eee',
+    },
+    // Dropdown Styles
+    dropdownStyle: {
+        backgroundColor: '#f5f5f5',
+        borderWidth: 1,
+        borderColor: '#eee',
+        borderRadius: 8,
+    },
+    dropdownContainerStyle: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#eee',
     },
 });

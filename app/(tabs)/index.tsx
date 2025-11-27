@@ -15,13 +15,14 @@ import {
   useWindowDimensions,
   RefreshControl,
   ImageBackground,
-  ActivityIndicator
+  ActivityIndicator,
+  Keyboard
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { rootApi, IMAGE_BASE_URL } from '../axiosInstance';
-import { useFood } from '../FoodContext'; // IMPORT CONTEXT
+import { useFood } from '../FoodContext';
 
 const BRANDS = [
   { id: '1', name: "La Pino'z", image: require('../../assets/images/brand1.png') },
@@ -166,6 +167,14 @@ export default function UserDashboard() {
     }
   };
 
+  // --- NEW: Clear Search Function ---
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setNoResults(false);
+    Keyboard.dismiss();
+  };
+
   const fetchData = async () => {
     await Promise.all([fetchCategories(), fetchDeals(), fetchAllItems()]);
   };
@@ -224,7 +233,6 @@ export default function UserDashboard() {
       }
   };
   
-  // --- FIX: ADDED MISSING FUNCTION ---
   const clearCategorySelection = () => {
       setSelectedCategory(null);
       fetchAllItems(); // Go back to showing all items
@@ -620,7 +628,12 @@ export default function UserDashboard() {
             {searchQuery.trim().length > 0 ? (
                 <View style={[styles.brandsContainer, { paddingHorizontal: isWebLayout ? 50 : 20, marginTop: 40 }]}>
                      <View style={styles.sectionHeader}>
-                         <Text style={styles.sectionTitle}>Search Results</Text>
+                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                             <TouchableOpacity onPress={handleClearSearch}>
+                                 <Ionicons name="arrow-back" size={24} color="#333" />
+                             </TouchableOpacity>
+                             <Text style={styles.sectionTitle}>Search Results</Text>
+                         </View>
                      </View>
 
                      {isSearchingItems ? (
@@ -702,7 +715,11 @@ export default function UserDashboard() {
                                     borderRadius: isWebLayout ? 40 : 25
                                 }]}>
                                     <Image 
-                                        source={{ uri: getCategoryImage(item.name) }} 
+                                        // Changed logic: Use API image URL if available
+                                        source={{ uri: item.imageUrl && item.imageUrl.startsWith('http') 
+                                            ? item.imageUrl 
+                                            : `${IMAGE_BASE_URL}/${item.imageUrl}` 
+                                        }} 
                                         style={styles.catIcon} 
                                     />
                                 </View>

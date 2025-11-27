@@ -23,26 +23,11 @@ const DRAWER_WIDTH = 250;
 
 // --- SIDEBAR CONSTANTS ---
 const sidebarItems = [
-    { icon: '🏠', label: 'Dashboard', route: '/AdminPage' },
+   { icon: '🏠', label: 'Dashboard', route: '/AdminPage' },
     { icon: '📦', label: 'Product', route: '/ProductPage' },
-    { icon: '🏷️', label: 'Category', route: '/CategoryPasge', active: true }, 
-    { icon: '⚙️', label: 'Attributes', route: '/attributes' },
-    { icon: '🏢', label: 'Restaurants', route: '/restaurants' },
-    { icon: '🚚', label: 'Drivers', route: '/drivers' },
-    { icon: '🍔', label: 'Foods', route: '/foods' },
+    { icon: '🏷️', label: 'Category', route: '/CategoryPasge', active: true }, // Fixed typo
     { icon: '🧑', label: 'Users', route: '/users' },
-    { icon: '👥', label: 'Roles', route: '/roles' },
-    { icon: '📰', label: 'Media', route: '/media' },
-    { icon: '📍', label: 'Live Traking', route: '/live-tracking' },
     { icon: '📅', label: 'Orders', route: '/orders' },
-    { icon: '🧭', label: 'Localization', route: '/localization' },
-    { icon: '🎫', label: 'Coupons', route: '/coupons' },
-    { icon: '🪙', label: 'Tax', route: '/tax' },
-    { icon: '⭐️', label: 'Product Review', route: '/review' },
-    { icon: '📞', label: 'Support Ticket', route: '/support' },
-    { icon: '🛠️', label: 'Settings', route: '/settings' },
-    { icon: '📊', label: 'Reports', route: '/reports' },
-    { icon: '📋', label: 'List Page', route: '/list' },
 ];
 
 // --- INTERFACES ---
@@ -91,9 +76,9 @@ const SidebarContent = ({ isDarkMode }: any) => {
         <>
             <View style={styles.sidebarHeader}>
                 <Text style={styles.sidebarLogoText}>ZOMO.</Text>
-                <TouchableOpacity style={styles.sidebarUtilityIcon}>
+                {/* <TouchableOpacity style={styles.sidebarUtilityIcon}>
                     <Text style={styles.sidebarIconText}>&#8861;</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
                 {sidebarItems.map((item, index) => (
@@ -152,24 +137,12 @@ const WebHeader = ({ handleLogout, isDarkMode, toggleDarkMode }: any) => {
                 </View>
                 <View style={styles.headerButtonGroup}>
                     <View style={styles.iconButtons}>
-                        {isSearchOpen ? (
-                            <SearchBar onSearchClose={() => setIsSearchOpen(false)} isMobile={false} />
-                        ) : (
-                            <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={() => setIsSearchOpen(true)}>
-                                <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔍</Text>
-                            </TouchableOpacity>
-                        )}
-                        {!isSearchOpen && (
-                            <>
-                                <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]}>
-                                    <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔔</Text>
-                                    <View style={styles.notificationBadge} />
-                                </TouchableOpacity>
+                        
+                                
                                 <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={toggleDarkMode}>
                                     <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>{isDarkMode ? '☀️' : '🌙'}</Text>
                                 </TouchableOpacity>
-                            </>
-                        )}
+                         
                     </View>
                     <TouchableOpacity 
                         style={[styles.userProfile, isDarkMode && darkStyles.userProfile]} 
@@ -221,13 +194,7 @@ const MobileHeader = ({ onHamburgerPress, handleLogout, isDarkMode, toggleDarkMo
                         <Text style={[styles.mobileLogoText, isDarkMode && darkStyles.textPrimary]}>ZOMO.</Text>
                     </View>
                     <View style={styles.mobileHeaderRight}>
-                        <TouchableOpacity style={[styles.mobileIconContainer, isDarkMode && darkStyles.iconButton]} onPress={() => setIsSearchOpen(true)}>
-                            <Text style={[styles.mobileIconText, isDarkMode && darkStyles.textPrimary]}>🔍</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]}>
-                            <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔔</Text>
-                            <View style={styles.notificationBadge} />
-                        </TouchableOpacity>
+                        
                         <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={toggleDarkMode}>
                             <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>{isDarkMode ? '☀️' : '🌙'}</Text>
                         </TouchableOpacity>
@@ -275,6 +242,16 @@ const CategoryModal = ({ isVisible, onClose, onSave, isDarkMode, categoryToEdit 
     const [name, setName] = useState('');
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [imageFile, setImageFile] = useState<any>(null); // For Web
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            const token = await AsyncStorage.getItem('userToken');
+            if (!token) {
+                router.replace('/login');
+            }
+        };
+        checkAuth();
+    }, []);
 
     useEffect(() => {
         if (isVisible) {
@@ -726,6 +703,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         paddingHorizontal: 15, paddingVertical: 10, backgroundColor: '#fff',
         marginBottom: 10, marginTop: 10, zIndex: 9000,
+        paddingTop: 45,      // Adjust this value (e.g., 40-50) for more top space
+        paddingBottom: 15,
     },
     mobileHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     mobileLogoText: { fontSize: 22, fontWeight: 'bold', color: '#333' },
@@ -744,8 +723,15 @@ const styles = StyleSheet.create({
         shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05,
         shadowRadius: 3, elevation: 1,
     },
-    searchBarContainerMobile: { width: '100%', borderRadius: 0, paddingVertical: 12, marginBottom: 10 },
-    searchInput: { flex: 1, fontSize: 16, paddingHorizontal: 10, color: '#333', ...Platform.select({ web: { outlineStyle: 'none' } }) },
+searchBarContainerMobile: {
+    width: '100%',
+    borderRadius: 0, 
+    paddingVertical: 12,
+    marginBottom: 10,
+    paddingHorizontal: 15,
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'android' ? 45 : 50, // 👈 Add this line to pull it down
+  },    searchInput: { flex: 1, fontSize: 16, paddingHorizontal: 10, color: '#333', ...Platform.select({ web: { outlineStyle: 'none' } }) },
     searchIconText: { fontSize: 18, color: '#999' },
     searchCloseButton: { paddingHorizontal: 5 },
     searchCloseText: { fontSize: 18, color: '#999' },
@@ -781,7 +767,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         paddingHorizontal: 15, marginBottom: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: '#444',
     },
-    sidebarLogoText: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
+    sidebarLogoText: { fontSize: 22, fontWeight: 'bold', color: '#fff',paddingTop:40  },
     sidebarUtilityIcon: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
     sidebarIconText: { fontSize: 20, color: '#fff' },
     sidebarItem: {
@@ -983,4 +969,5 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         backgroundColor: '#eee',
     },
-});
+}); 
+

@@ -42,4 +42,5 @@ const createAxiosInstance = (baseURL: string): AxiosInstance => {
   return instance;
 };
 
+// export const rootApi: AxiosInstance = createAxiosInstance("http://192.168.0.219:8080");
 export const rootApi: AxiosInstance = createAxiosInstance("https://foodapp-backend-nfne.onrender.com");

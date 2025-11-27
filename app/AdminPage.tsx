@@ -4,6 +4,7 @@ import {
     Dimensions,
     ImageBackground,
     Platform,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
@@ -20,6 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router'; // ✅ NAVIGATION FIX
 import * as ImagePicker from 'expo-image-picker'; 
 import axios from 'axios'; 
+
 
 // Get screen dimensions and define drawer width
 const screenWidth = Dimensions.get('window').width; 
@@ -81,23 +83,8 @@ const sidebarItems = [
     { icon: '🏠', label: 'Dashboard', route: '/AdminPage', active: true },
     { icon: '📦', label: 'Product', route: '/ProductPage' },
     { icon: '🏷️', label: 'Category', route: '/CategoryPasge' }, // Fixed typo
-    { icon: '⚙️', label: 'Attributes', route: '/attributes' },
-    { icon: '🏢', label: 'Restaurants', route: '/restaurants' },
-    { icon: '🚚', label: 'Drivers', route: '/drivers' },
-    { icon: '🍔', label: 'Foods', route: '/foods' },
     { icon: '🧑', label: 'Users', route: '/users' },
-    { icon: '👥', label: 'Roles', route: '/roles' },
-    { icon: '📰', label: 'Media', route: '/media' },
-    { icon: '📍', label: 'Live Traking', route: '/live-tracking' },
     { icon: '📅', label: 'Orders', route: '/orders' },
-    { icon: '🧭', label: 'Localization', route: '/localization' },
-    { icon: '🎫', label: 'Coupons', route: '/coupons' },
-    { icon: '🪙', label: 'Tax', route: '/tax' },
-    { icon: '⭐️', label: 'Product Review', route: '/review' },
-    { icon: '📞', label: 'Support Ticket', route: '/support' },
-    { icon: '🛠️', label: 'Settings', route: '/settings' },
-    { icon: '📊', label: 'Reports', route: '/reports' },
-    { icon: '📋', label: 'List Page', route: '/list' },
 ];
 
 // --- FORMATTING HELPERS ---
@@ -454,28 +441,17 @@ const WebHeader = ({ handleLogout, isDarkMode, toggleDarkMode }: any) => {
                 
                 <View style={styles.headerButtonGroup}>
                     <View style={styles.iconButtons}>
-                        {isSearchOpen ? (
-                            <SearchBar onSearchClose={() => setIsSearchOpen(false)} isMobile={false} />
-                        ) : (
-                            <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={() => setIsSearchOpen(true)}>
-                                <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔍</Text>
-                            </TouchableOpacity>
-                        )}
-                        
-                        {!isSearchOpen && (
-                            <>
-                                <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]}>
-                                    <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔔</Text>
-                                    <View style={styles.notificationBadge} />
-                                </TouchableOpacity>
+                       
+                            
+                               
 
                                 <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={toggleDarkMode}>
                                     <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>
                                         {isDarkMode ? '☀️' : '🌙'}
                                     </Text>
                                 </TouchableOpacity>
-                            </>
-                        )}
+                            
+                        
                     </View>
                     
                     <TouchableOpacity 
@@ -549,14 +525,7 @@ const MobileHeader = ({ onHamburgerPress, handleLogout, isDarkMode, toggleDarkMo
                     </View>
 
                     <View style={styles.mobileHeaderRight}>
-                        <TouchableOpacity style={[styles.mobileIconContainer, isDarkMode && darkStyles.iconButton]} onPress={() => setIsSearchOpen(true)}>
-                            <Text style={[styles.mobileIconText, isDarkMode && darkStyles.textPrimary]}>🔍</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]}>
-                            <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔔</Text>
-                            <View style={styles.notificationBadge} />
-                        </TouchableOpacity>
+                        
                         
                         <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={toggleDarkMode}>
                             <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>
@@ -603,9 +572,9 @@ const SidebarContent = ({ isDarkMode }: any) => {
         <>
             <View style={styles.sidebarHeader}>
                 <Text style={styles.sidebarLogoText}>ZOMO.</Text>
-                <TouchableOpacity style={styles.sidebarUtilityIcon}>
+                {/* <TouchableOpacity style={styles.sidebarUtilityIcon}>
                     <Text style={styles.sidebarIconText}>&#8861;</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
             
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -785,6 +754,7 @@ export default function AdminPage() {
 
     const [offers, setOffers] = useState<any[]>([]);
     const [isLoadingOffers, setIsLoadingOffers] = useState(false);
+    
 
     // 🚩 2. AUTH CHECK EFFECT (Executes first)
     useEffect(() => {
@@ -1503,14 +1473,15 @@ const styles = StyleSheet.create({
         shadowRadius: 3,
         elevation: 1,
     },
-    searchBarContainerMobile: { // Mobile full width override
-        width: '100%',
-        borderRadius: 0, 
-        paddingVertical: 12,
-        marginBottom: 10,
-        paddingHorizontal: 15,
-        backgroundColor: '#fff',
-    },
+    searchBarContainerMobile: {
+    width: '100%',
+    borderRadius: 0, 
+    paddingVertical: 12,
+    marginBottom: 10,
+    paddingHorizontal: 15,
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'android' ? 45 : 50, // 👈 Add this line to pull it down
+  },
     searchInput: {
         flex: 1,
         fontSize: 16,
@@ -1536,11 +1507,17 @@ const styles = StyleSheet.create({
     // --- MOBILE HEADER STYLES ---
     // Mobile Header Styles
     mobileHeaderContainer: {
-        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-        paddingHorizontal: 15, paddingVertical: 10, backgroundColor: '#fff',
-        marginBottom: 10, marginTop: 10, zIndex: 9000,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 15,
+        //paddingVertical: 10,
         paddingTop: 45,      // Adjust this value (e.g., 40-50) for more top space
         paddingBottom: 15,
+        backgroundColor: '#fff', 
+        marginBottom: 10,
+        marginTop:10,
+        zIndex: 9000,
     },
  
     mobileHeaderLeft: {
@@ -1635,7 +1612,7 @@ const styles = StyleSheet.create({
     sidebarLogoText: {
         fontSize: 22,
         fontWeight: 'bold',
-        color: '#fff',
+        color: '#fff',paddingTop:40 
     },
     sidebarUtilityIcon: {
         width: 30,

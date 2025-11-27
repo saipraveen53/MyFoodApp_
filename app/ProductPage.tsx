@@ -28,26 +28,11 @@ const DRAWER_WIDTH = 250;
 
 // --- SIDEBAR CONSTANTS ---
 const sidebarItems = [
-    { icon: '🏠', label: 'Dashboard', route: '/AdminPage' },
+    { icon: '🏠', label: 'Dashboard', route: '/AdminPage'},
     { icon: '📦', label: 'Product', route: '/ProductPage', active: true },
-    { icon: '🏷️', label: 'Category', route: '/CategoryPasge' },
-    { icon: '⚙️', label: 'Attributes', route: '/attributes' },
-    { icon: '🏢', label: 'Restaurants', route: '/restaurants' },
-    { icon: '🚚', label: 'Drivers', route: '/drivers' },
-    { icon: '🍔', label: 'Foods', route: '/foods' },
+    { icon: '🏷️', label: 'Category', route: '/CategoryPasge' }, // Fixed typo
     { icon: '🧑', label: 'Users', route: '/users' },
-    { icon: '👥', label: 'Roles', route: '/roles' },
-    { icon: '📰', label: 'Media', route: '/media' },
-    { icon: '📍', label: 'Live Traking', route: '/live-tracking' },
     { icon: '📅', label: 'Orders', route: '/orders' },
-    { icon: '🧭', label: 'Localization', route: '/localization' },
-    { icon: '🎫', label: 'Coupons', route: '/coupons' },
-    { icon: '🪙', label: 'Tax', route: '/tax' },
-    { icon: '⭐️', label: 'Product Review', route: '/review' },
-    { icon: '📞', label: 'Support Ticket', route: '/support' },
-    { icon: '🛠️', label: 'Settings', route: '/settings' },
-    { icon: '📊', label: 'Reports', route: '/reports' },
-    { icon: '📋', label: 'List Page', route: '/list' },
 ];
 
 // --- INTERFACES ---
@@ -70,20 +55,7 @@ interface Product {
 
 // --- REUSABLE COMPONENTS ---
 
-const SearchBar = ({ onSearchClose, isMobile }: { onSearchClose: () => void, isMobile: boolean }) => (
-    <View style={[styles.searchBarContainer, isMobile && styles.searchBarContainerMobile]}>
-        <Text style={styles.searchIconText}>🔍</Text>
-        <TextInput 
-            style={styles.searchInput}
-            placeholder="Search here..."
-            placeholderTextColor="#999"
-            autoFocus={true} 
-        />
-        <TouchableOpacity style={styles.searchCloseButton} onPress={onSearchClose}>
-            <Text style={styles.searchCloseText}>&#10005;</Text>
-        </TouchableOpacity>
-    </View>
-);
+
 
 const LogoutDropdown = ({ positionStyle, onLogout, onClose }: any) => (
     <View style={[styles.logoutDropdown, positionStyle]}>
@@ -113,9 +85,9 @@ const SidebarContent = ({ isDarkMode }: any) => {
         <>
             <View style={styles.sidebarHeader}>
                 <Text style={styles.sidebarLogoText}>ZOMO.</Text>
-                <TouchableOpacity style={styles.sidebarUtilityIcon}>
+                {/* <TouchableOpacity style={styles.sidebarUtilityIcon}>
                     <Text style={styles.sidebarIconText}>&#8861;</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
             
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -184,28 +156,15 @@ const WebHeader = ({ handleLogout, isDarkMode, toggleDarkMode }: any) => {
                 
                 <View style={styles.headerButtonGroup}>
                     <View style={styles.iconButtons}>
-                        {isSearchOpen ? (
-                            <SearchBar onSearchClose={() => setIsSearchOpen(false)} isMobile={false} />
-                        ) : (
-                            <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={() => setIsSearchOpen(true)}>
-                                <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔍</Text>
-                            </TouchableOpacity>
-                        )}
                         
-                        {!isSearchOpen && (
-                            <>
-                                <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]}>
-                                    <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔔</Text>
-                                    <View style={styles.notificationBadge} />
-                                </TouchableOpacity>
 
                                 <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={toggleDarkMode}>
                                     <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>
                                         {isDarkMode ? '☀️' : '🌙'}
                                     </Text>
                                 </TouchableOpacity>
-                            </>
-                        )}
+                           
+                        
                     </View>
                     
                     <TouchableOpacity 
@@ -279,14 +238,6 @@ const MobileHeader = ({ onHamburgerPress, handleLogout, isDarkMode, toggleDarkMo
                     </View>
 
                     <View style={styles.mobileHeaderRight}>
-                        <TouchableOpacity style={[styles.mobileIconContainer, isDarkMode && darkStyles.iconButton]} onPress={() => setIsSearchOpen(true)}>
-                            <Text style={[styles.mobileIconText, isDarkMode && darkStyles.textPrimary]}>🔍</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]}>
-                            <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>🔔</Text>
-                            <View style={styles.notificationBadge} />
-                        </TouchableOpacity>
                         
                         <TouchableOpacity style={[styles.iconButton, isDarkMode && darkStyles.iconButton]} onPress={toggleDarkMode}>
                             <Text style={[styles.iconText, isDarkMode && darkStyles.textPrimary]}>
@@ -1062,7 +1013,15 @@ const styles = StyleSheet.create({
         shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05,
         shadowRadius: 3, elevation: 1,
     },
-    searchBarContainerMobile: { width: '100%', borderRadius: 0, paddingVertical: 12, marginBottom: 10 },
+    searchBarContainerMobile: {
+    width: '100%',
+    borderRadius: 0, 
+    paddingVertical: 12,
+    marginBottom: 10,
+    paddingHorizontal: 15,
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'android' ? 45 : 50, // 👈 Add this line to pull it down
+  },
     searchInput: { flex: 1, fontSize: 16, paddingHorizontal: 10, color: '#333', ...Platform.select({ web: { outlineStyle: 'none' } }) },
     searchIconText: { fontSize: 18, color: '#999' },
     searchCloseButton: { paddingHorizontal: 5 },
@@ -1099,7 +1058,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         paddingHorizontal: 15, marginBottom: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: '#444',
     },
-    sidebarLogoText: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
+    sidebarLogoText: { fontSize: 22, fontWeight: 'bold', color: '#fff',paddingTop:40  },
     sidebarUtilityIcon: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
     sidebarIconText: { fontSize: 20, color: '#fff' },
     sidebarItem: {
